@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="Logo.png">
+  <title>WordPulse 智慧英文寶庫</title>
+  <meta name="description" content="高效率現代化英文背單字系統，支援 3D 卡牌翻轉記憶、語音真人朗讀、拼字挑戰測驗與學習進度追蹤。">
+
+  <!-- PWA Manifest & App Icons -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="64x64" href="Logo.png">
+  <link rel="apple-touch-icon" href="icon 192.png">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="WordPulse">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-logo" title="WordPulse 應用程式圖標">
+          <img src="Logo.png" alt="WordPulse Logo">
+        </div>
+        <div class="brand-info">
+          <h1>WordPulse 單字脈動</h1>
+          <p>智慧英文背單字小程式 · 3D 卡牌與拼字互動學習</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-secondary" onclick="openBackupModal()" title="匯出入與清空詞庫">
+          詞庫管理
+        </button>
+        <button class="btn btn-primary" onclick="openAddModal()">
+          新增單字
+        </button>
+        <button class="btn btn-success" onclick="openReviewChoiceModal()">
+          開始複習
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats Dashboard -->
+    <section class="stats-banner" aria-label="學習統計">
+      <div class="stat-item">
+        <div class="stat-icon total">📚</div>
+        <div class="stat-content">
+          <div class="stat-val" id="statTotal">0</div>
+          <div class="stat-label">單字總量</div>
+        </div>
+      </div>
+
+      <div class="stat-item">
+        <div class="stat-icon mastered">🏆</div>
+        <div class="stat-content">
+          <div class="stat-val" id="statMastered" style="color: #15803d;">0</div>
+          <div class="stat-label">已熟記</div>
+        </div>
+      </div>
+
+      <div class="stat-item">
+        <div class="stat-icon learning">📖</div>
+        <div class="stat-content">
+          <div class="stat-val" id="statLearning" style="color: #b45309;">0</div>
+          <div class="stat-label">學習中</div>
+        </div>
+      </div>
+
+      <div class="stat-item">
+        <div class="stat-icon new">🌱</div>
+        <div class="stat-content">
+          <div class="stat-val" id="statNew" style="color: #b91c1c;">0</div>
+          <div class="stat-label">需加強 (陌生)</div>
+        </div>
+      </div>
+
+      <div class="progress-stat">
+        <div class="progress-header">
+          <span>整體掌握率</span>
+          <span id="masteryRateText">0%</span>
+        </div>
+        <div class="progress-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-bar" id="masteryBar" style="width: 0%;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toolbar: Search & Filter Tabs -->
+    <section class="toolbar">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="搜尋英文單字、中文意思或例句..." oninput="handleSearch()">
+      </div>
+
+      <div class="filter-group" id="filterTabs">
+        <button class="filter-btn active" onclick="setFilter('全部')">全部 (<span id="countAll">0</span>)</button>
+        <button class="filter-btn" onclick="setFilter('學習中')">學習中 (<span id="countLearning">0</span>)</button>
+        <button class="filter-btn" onclick="setFilter('陌生')">陌生/需加強 (<span id="countNew">0</span>)</button>
+        <button class="filter-btn" onclick="setFilter('熟記')">已熟記 (<span id="countMastered">0</span>)</button>
+      </div>
+    </section>
+
+    <!-- Word Cards Grid -->
+    <main class="word-grid" id="wordList" aria-live="polite">
+      <!-- Dynamically Rendered -->
+    </main>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 1: Add / Edit Word Modal
+       ======================================================================== -->
+  <div class="modal-backdrop" id="wordModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 id="modalTitle">新增英文單字</h3>
+        <button class="close-btn" onclick="closeWordModal()" aria-label="關閉">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editWordId">
+
+        <div class="form-row">
+          <label class="form-label" for="wordInput">英文單字 *</label>
+          <input type="text" id="wordInput" class="form-control" placeholder="例: Water" required>
+        </div>
+
+        <div class="form-grid-2 form-row">
+          <div>
+            <label class="form-label" for="typeInput">詞性</label>
+            <select id="typeInput" class="form-control">
+              <option value="n.">名詞 (n.)</option>
+              <option value="v.">動詞 (v.)</option>
+              <option value="adj." selected>形容詞 (adj.)</option>
+              <option value="adv.">副詞 (adv.)</option>
+              <option value="prep.">介系詞 (prep.)</option>
+              <option value="conj.">連接詞 (conj.)</option>
+              <option value="phrase">片語 (phrase)</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" for="statusInput">學習狀態</label>
+            <select id="statusInput" class="form-control">
+              <option value="學習中" selected>學習中</option>
+              <option value="陌生">陌生 (需加強)</option>
+              <option value="熟記">已熟記</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="meaningInput">中文翻譯 *</label>
+          <input type="text" id="meaningInput" class="form-control" placeholder="例: 水" required>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="exampleEnInput">英文例句</label>
+          <input type="text" id="exampleEnInput" class="form-control" placeholder="例: I like drinking water.">
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="exampleZhInput">例句中文翻譯</label>
+          <input type="text" id="exampleZhInput" class="form-control" placeholder="例: 我喜歡喝水。">
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="noteInput">筆記</label>
+          <textarea id="noteInput" class="form-control" placeholder="water 有各種"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeWordModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveWord()">儲存單字</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 2: Review Mode Choice Modal
+       ======================================================================== -->
+  <div class="modal-backdrop" id="reviewChoiceModal" role="dialog" aria-modal="true">
+    <div class="modal-window" style="max-width: 460px;">
+      <div class="modal-header">
+        <h3>選擇複習方式</h3>
+        <button class="close-btn" onclick="closeReviewChoiceModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 24px 20px;">
+        <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">
+          選擇適合您的學習節奏，強化記憶迴路：
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Choice 1: Flashcard -->
+          <div onclick="startReview('卡牌')"
+            style="border: 2px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px; cursor: pointer; transition: all var(--transition-fast); display: flex; align-items: center; gap: 16px; background: var(--bg-card);"
+            onmouseover="this.style.borderColor='var(--primary)'"
+            onmouseout="this.style.borderColor='var(--border-color)'">
+            <div
+              style="font-size: 32px; background: #e0e7ff; width: 56px; height: 56px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: #4f46e5;">
+              🃏
+            </div>
+            <div>
+              <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary); margin-bottom: 4px;">3D
+                卡牌翻轉記憶</div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary);">經典閃卡模式，點擊翻面看釋義，自主評定熟記度</div>
+            </div>
+          </div>
+
+          <!-- Choice 2: Spelling -->
+          <div onclick="startReview('拼字')"
+            style="border: 2px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px; cursor: pointer; transition: all var(--transition-fast); display: flex; align-items: center; gap: 16px; background: var(--bg-card);"
+            onmouseover="this.style.borderColor='#0ea5e9'" onmouseout="this.style.borderColor='var(--border-color)'">
+            <div
+              style="font-size: 32px; background: #e0f2fe; width: 56px; height: 56px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: #0284c7;">
+              ⌨️
+            </div>
+            <div>
+              <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary); margin-bottom: 4px;">拼字大挑戰測驗
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary);">看中文與詞性輸入正確拼寫，驗證拼字掌握度</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px; padding-top: 14px; border-top: 1px dashed var(--border-color);">
+          <label
+            style="font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="reviewFilterUnmastered" checked>
+            <span>優先複習「未熟記」單字（陌生 + 學習中）</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       REVIEW VIEW 1: 3D Flashcard Overlay
+       ======================================================================== -->
+  <div class="review-overlay" id="flashcardOverlay">
+    <div class="review-topbar">
+      <div class="review-progress-info" id="flashcardProgress">卡片 1 / 10</div>
+      <button class="review-close" onclick="exitReview()">✕ 結束複習</button>
+    </div>
+
+    <!-- 3D Card Stage -->
+    <div class="flashcard-stage" onclick="flipCurrentCard()">
+      <div class="flashcard-inner" id="flashcardInner">
+        <!-- Front Face -->
+        <div class="flashcard-face flashcard-front">
+          <div style="position: absolute; top: 20px; left: 24px;">
+            <span class="badge-type" id="fcFrontType">adj.</span>
+          </div>
+          <button class="speech-btn" id="fcFrontSpeech"
+            onclick="event.stopPropagation(); speakText(currentReviewWord.word)"
+            style="position: absolute; top: 20px; right: 24px;" title="朗讀發音">
+            🔊
+          </button>
+
+          <div class="flashcard-word" id="fcFrontWord">word</div>
+
+          <div class="flashcard-hint-text">點擊卡片或按 Space 鍵翻轉背面 🔄</div>
+        </div>
+
+        <!-- Back Face -->
+        <div class="flashcard-face flashcard-back">
+          <div style="position: absolute; top: 20px; left: 24px;">
+            <span class="badge-type" id="fcBackType">adj.</span>
+          </div>
+          <div class="flashcard-meaning" id="fcBackMeaning">中文意思</div>
+
+          <div class="flashcard-example" id="fcBackExample" style="display: none;">
+            <div class="example-en" id="fcBackExEn">Example sentence.</div>
+            <div class="example-zh" id="fcBackExZh">例句翻譯。</div>
+          </div>
+
+          <div class="flashcard-hint-text">再次點擊翻回正面 🔄</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Review Rate Controls -->
+    <div class="review-controls">
+      <button class="review-rate-btn hard" onclick="rateFlashcard('陌生')">
+        <span>⚠️ 還不熟 (陌生)</span>
+        <span class="key-tip">快捷鍵: 1 或 ←</span>
+      </button>
+      <button class="review-rate-btn easy" onclick="rateFlashcard('熟記')">
+        <span>✨ 記住了 (熟記)</span>
+        <span class="key-tip">快捷鍵: 2 或 →</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       REVIEW VIEW 2: Spelling Challenge Overlay
+       ======================================================================== -->
+  <div class="review-overlay" id="spellingOverlay">
+    <div class="review-topbar">
+      <div class="review-progress-info" id="spellingProgress">題目 1 / 10 · 得分: 0</div>
+      <button class="review-close" onclick="exitReview()">✕ 結束測驗</button>
+    </div>
+
+    <div class="spelling-box">
+      <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 6px;">
+        <span class="badge-type" id="spellingType">adj.</span>
+        <button class="speech-btn" onclick="speakText(currentSpellingWord.word)" title="聆聽發音提示">🔊</button>
+      </div>
+
+      <div class="spelling-prompt" id="spellingMeaning">中文釋義</div>
+      <div class="spelling-sub">請輸入對應的英文單字拼寫 (按 Enter 送出)</div>
+
+      <!-- 華碩輸入法提示標籤 -->
+      <div
+        style="margin: 0 auto 16px; max-width: 460px; font-size: 0.82rem; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 7px 14px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: var(--shadow-sm);">
+        <span>⚠️ 提醒：請勿使用「華碩智慧輸入法」進行測驗，避免自動帶出文字</span>
+      </div>
+
+      <div class="spelling-input-wrap">
+        <input type="text" id="spellingInput" class="spelling-input" placeholder="Type word..." autocomplete="off"
+          autocorrect="off" autocapitalize="off" spellcheck="false" onkeydown="handleSpellingKey(event)">
+      </div>
+
+      <div class="spelling-hint-area" id="spellingHint"></div>
+
+      <div class="spelling-actions">
+        <button class="btn btn-secondary btn-sm" onclick="showSpellingHint()">💡 提示一個字母</button>
+        <button class="btn btn-secondary btn-sm" onclick="revealSpellingAnswer()">👀 查看答案</button>
+        <button class="btn btn-primary btn-sm" onclick="submitSpellingAnswer()">送出答案 (Enter)</button>
+      </div>
+    </div>
+
+    <div style="height: 40px;"></div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 3: Review Result Summary Modal
+       ======================================================================== -->
+  <div class="modal-backdrop" id="summaryModal" role="dialog" aria-modal="true">
+    <div class="modal-window" style="max-width: 440px;">
+      <div class="modal-body summary-card">
+        <div style="font-size: 48px;">🎉</div>
+        <h3 style="font-size: 1.4rem; font-weight: 700; margin-top: 8px;">複習完成！</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;" id="summarySubTitle">本次學習表現相當出色！</p>
+
+        <div class="summary-score" id="summaryScore">100%</div>
+
+        <div class="summary-details">
+          <div class="summary-stat-box">
+            <div class="num" style="color: #10b981;" id="sumCorrectCount">0</div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary);">完全熟記</div>
+          </div>
+          <div class="summary-stat-box">
+            <div class="num" style="color: #ef4444;" id="sumWrongCount">0</div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary);">仍需加強</div>
+          </div>
+          <div class="summary-stat-box">
+            <div class="num" style="color: var(--primary);" id="sumTotalCount">0</div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary);">複習總數</div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="closeSummaryModal()">
+          完成並返回列表
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 4: Backup & Restore Modal
+       ======================================================================== -->
+  <div class="modal-backdrop" id="backupModal" role="dialog" aria-modal="true">
+    <div class="modal-window" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3>詞庫備份與管理</h3>
+        <button class="close-btn" onclick="closeBackupModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+        <div>
+          <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 6px;">📥 匯出詞庫 (JSON 備份)</h4>
+          <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 8px;">
+            將您建立的所有單字與學習進度匯出成 JSON 檔案，方便換裝置或備份。
+          </p>
+          <button class="btn btn-secondary btn-sm" onclick="exportData()">下載備份檔案 (.json)</button>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--border-color);">
+
+        <div>
+          <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 6px;">📤 匯入詞庫</h4>
+          <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 8px;">
+            載入先前備份的單字檔案（.json 格式）：
+          </p>
+          <input type="file" id="importFile" accept=".json" onchange="importData(event)" style="font-size: 0.85rem;">
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--border-color);">
+
+        <div>
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: #dc2626; margin-bottom: 6px;">🗑️ 清空所有單字</h4>
+          <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 8px;">
+            清除當前所有單字資料，將詞庫完全清空。
+          </p>
+          <button class="btn btn-outline-danger btn-sm" onclick="clearAllWords()">清空所有單字</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeBackupModal()">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       APPLICATION LOGIC SCRIPT
+       ======================================================================== -->
+  <script>
+    /* --------------------------------------------------------------------------
+       1. State Management & LocalStorage (No Default Mock Data)
+       -------------------------------------------------------------------------- */
+    const STORAGE_KEY = "wordpulse_user_words_v1";
+    let words = [];
+    let currentFilter = "全部";
+    let searchQuery = "";
+
+    function loadWords() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          words = JSON.parse(stored);
+          if (!Array.isArray(words)) words = [];
+        } catch (e) {
+          console.error("無法解析單字資料", e);
+          words = [];
+        }
+      } else {
+        // 沒有預設資料，以空白詞庫開始
+        words = [];
+      }
+      updateStats();
+    }
+
+    function saveWordsToStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
+      updateStats();
+    }
+
+    /* --------------------------------------------------------------------------
+       2. PWA Service Worker Registration
+       -------------------------------------------------------------------------- */
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => console.log('WordPulse PWA Service Worker 已就緒:', reg.scope))
+          .catch((err) => console.warn('PWA Service Worker 註冊失敗 (若以 file:// 協議開啟屬正常):', err));
+      });
+    }
+
+    /* --------------------------------------------------------------------------
+       3. Speech Synthesis (TTS)
+       -------------------------------------------------------------------------- */
+    function speakText(text) {
+      if (!window.speechSynthesis) {
+        alert("您的瀏覽器不支援語音合成發音。");
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
+      utterance.rate = 0.9;
+
+      const voices = window.speechSynthesis.getVoices();
+      const enVoice = voices.find(v => v.lang.startsWith("en-US") || v.lang.startsWith("en-GB"));
+      if (enVoice) utterance.voice = enVoice;
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+
+    /* --------------------------------------------------------------------------
+       4. Render UI & Filtering
+       -------------------------------------------------------------------------- */
+    function renderWordList() {
+      updateStats();
+      const listEl = document.getElementById("wordList");
+
+      if (words.length === 0) {
+        listEl.innerHTML = `
+          <div class="empty-state">
+            <h3>目前尚未新增任何單字</h3>
+            <p>點擊上方「新增單字」建立英文單字卡，或由「詞庫管理」匯入現有的單字清單。</p>
+            <button class="btn btn-primary" onclick="openAddModal()">立即新增第一個單字</button>
+          </div>
+        `;
+        return;
+      }
+
+      const filtered = words.filter(item => {
+        const matchesFilter = (currentFilter === "全部" || item.status === currentFilter);
+        if (!matchesFilter) return false;
+        if (!searchQuery) return true;
+
+        const q = searchQuery.toLowerCase();
+        return (
+          item.word.toLowerCase().includes(q) ||
+          item.meaning.toLowerCase().includes(q) ||
+          (item.exampleEn && item.exampleEn.toLowerCase().includes(q)) ||
+          (item.note && item.note.toLowerCase().includes(q))
+        );
+      });
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <h3>查無符合條件的單字</h3>
+            <p>試著調整搜尋關鍵字或切換狀態篩選標籤。</p>
+            <button class="btn btn-secondary" onclick="clearSearchAndFilter()">重設篩選條件</button>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = "";
+      filtered.forEach(item => {
+        const card = document.createElement("div");
+        card.className = `word-card ${item.status}`;
+        card.innerHTML = `
+          <div>
+            <div class="card-header">
+              <div class="word-title-area">
+                <span class="word-text">${escapeHtml(item.word)}</span>
+              </div>
+              <button class="speech-btn" onclick="speakText('${escapeQuotes(item.word)}')" title="發音">🔊</button>
+            </div>
+
+            <div class="card-meta">
+              <span class="badge-type">${escapeHtml(item.type || "n.")}</span>
+              <span class="badge-status ${item.status}" onclick="cycleWordStatus('${item.id}')" title="點擊切換狀態">
+                ${getStatusIcon(item.status)} ${item.status}
+              </span>
+            </div>
+
+            <div class="card-meaning">${escapeHtml(item.meaning)}</div>
+
+            ${item.exampleEn ? `
+              <div class="card-example">
+                <div class="example-en">${escapeHtml(item.exampleEn)}</div>
+                ${item.exampleZh ? `<div class="example-zh">${escapeHtml(item.exampleZh)}</div>` : ""}
+              </div>
+            ` : ""}
+
+            ${item.note ? `
+              <div class="card-note">💡 ${escapeHtml(item.note)}</div>
+            ` : ""}
+          </div>
+
+          <div class="card-footer">
+            <div class="card-status-actions">
+              <button class="status-quick-btn" onclick="setWordStatus('${item.id}', '陌生')" style="color: #dc2626;">陌生</button>
+              <button class="status-quick-btn" onclick="setWordStatus('${item.id}', '學習中')" style="color: #d97706;">學習中</button>
+              <button class="status-quick-btn" onclick="setWordStatus('${item.id}', '熟記')" style="color: #16a34a;">熟記</button>
+            </div>
+
+            <div class="card-ops">
+              <button onclick="openEditModal('${item.id}')" title="編輯">✏️</button>
+              <button class="del-btn" onclick="deleteWord('${item.id}')" title="刪除">🗑️</button>
+            </div>
+          </div>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    function clearSearchAndFilter() {
+      searchQuery = "";
+      document.getElementById("searchInput").value = "";
+      setFilter("全部");
+    }
+
+    function getStatusIcon(status) {
+      if (status === "熟記") return "✓";
+      if (status === "學習中") return "●";
+      return "▲";
+    }
+
+    function updateStats() {
+      const total = words.length;
+      const mastered = words.filter(w => w.status === "熟記").length;
+      const learning = words.filter(w => w.status === "學習中").length;
+      const newCount = words.filter(w => w.status === "陌生").length;
+
+      document.getElementById("statTotal").textContent = total;
+      document.getElementById("statMastered").textContent = mastered;
+      document.getElementById("statLearning").textContent = learning;
+      document.getElementById("statNew").textContent = newCount;
+
+      document.getElementById("countAll").textContent = total;
+      document.getElementById("countLearning").textContent = learning;
+      document.getElementById("countNew").textContent = newCount;
+      document.getElementById("countMastered").textContent = mastered;
+
+      const rate = total === 0 ? 0 : Math.round((mastered / total) * 100);
+      document.getElementById("masteryRateText").textContent = `${rate}%`;
+      document.getElementById("masteryBar").style.width = `${rate}%`;
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.querySelectorAll("#filterTabs .filter-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.textContent.includes(filter));
+      });
+      renderWordList();
+    }
+
+    function handleSearch() {
+      searchQuery = document.getElementById("searchInput").value.trim();
+      renderWordList();
+    }
+
+    /* --------------------------------------------------------------------------
+       5. Word CRUD Actions
+       -------------------------------------------------------------------------- */
+    function setWordStatus(id, newStatus) {
+      const target = words.find(w => w.id === id);
+      if (target) {
+        target.status = newStatus;
+        saveWordsToStorage();
+        renderWordList();
+      }
+    }
+
+    function cycleWordStatus(id) {
+      const target = words.find(w => w.id === id);
+      if (!target) return;
+      if (target.status === "陌生") target.status = "學習中";
+      else if (target.status === "學習中") target.status = "熟記";
+      else target.status = "陌生";
+      saveWordsToStorage();
+      renderWordList();
+    }
+
+    function openAddModal() {
+      document.getElementById("modalTitle").textContent = "新增英文單字";
+      document.getElementById("editWordId").value = "";
+      document.getElementById("wordInput").value = "";
+      document.getElementById("typeInput").value = "n.";
+      document.getElementById("statusInput").value = "學習中";
+      document.getElementById("meaningInput").value = "";
+      document.getElementById("exampleEnInput").value = "";
+      document.getElementById("exampleZhInput").value = "";
+      document.getElementById("noteInput").value = "";
+      document.getElementById("wordModal").classList.add("show");
+      document.getElementById("wordInput").focus();
+    }
+
+    function openEditModal(id) {
+      const word = words.find(w => w.id === id);
+      if (!word) return;
+
+      document.getElementById("modalTitle").textContent = "編輯單字內容";
+      document.getElementById("editWordId").value = word.id;
+      document.getElementById("wordInput").value = word.word;
+      document.getElementById("typeInput").value = word.type || "n.";
+      document.getElementById("statusInput").value = word.status || "學習中";
+      document.getElementById("meaningInput").value = word.meaning || "";
+      document.getElementById("exampleEnInput").value = word.exampleEn || "";
+      document.getElementById("exampleZhInput").value = word.exampleZh || "";
+      document.getElementById("noteInput").value = word.note || "";
+      document.getElementById("wordModal").classList.add("show");
+    }
+
+    function closeWordModal() {
+      document.getElementById("wordModal").classList.remove("show");
+    }
+
+    function saveWord() {
+      const id = document.getElementById("editWordId").value;
+      const word = document.getElementById("wordInput").value.trim();
+      const type = document.getElementById("typeInput").value;
+      const status = document.getElementById("statusInput").value;
+      const meaning = document.getElementById("meaningInput").value.trim();
+      const exampleEn = document.getElementById("exampleEnInput").value.trim();
+      const exampleZh = document.getElementById("exampleZhInput").value.trim();
+      const note = document.getElementById("noteInput").value.trim();
+
+      if (!word || !meaning) {
+        alert("請至少填寫「英文單字」與「中文釋義」！");
+        return;
+      }
+
+      if (id) {
+        // Edit existing
+        const idx = words.findIndex(w => w.id === id);
+        if (idx !== -1) {
+          words[idx] = { ...words[idx], word, type, status, meaning, exampleEn, exampleZh, note };
+        }
+      } else {
+        // Create new
+        const newWord = {
+          id: "w_" + Date.now(),
+          word,
+          type,
+          status,
+          meaning,
+          exampleEn,
+          exampleZh,
+          note
+        };
+        words.unshift(newWord);
+      }
+
+      saveWordsToStorage();
+      renderWordList();
+      closeWordModal();
+    }
+
+    function deleteWord(id) {
+      const target = words.find(w => w.id === id);
+      if (!target) return;
+      if (confirm(`確定要刪除「${target.word}」嗎？`)) {
+        words = words.filter(w => w.id !== id);
+        saveWordsToStorage();
+        renderWordList();
+      }
+    }
+
+    /* --------------------------------------------------------------------------
+       6. Review Mode - Choice & Setup
+       -------------------------------------------------------------------------- */
+    let reviewDeck = [];
+    let reviewIndex = 0;
+    let reviewMode = ""; // '卡牌' or '拼字'
+    let reviewResults = { correct: 0, wrong: 0, total: 0 };
+
+    function openReviewChoiceModal() {
+      if (words.length === 0) {
+        alert("目前詞庫中尚無任何單字，請先點擊「新增單字」建立您的學習卡！");
+        return;
+      }
+      document.getElementById("reviewChoiceModal").classList.add("show");
+    }
+
+    function closeReviewChoiceModal() {
+      document.getElementById("reviewChoiceModal").classList.remove("show");
+    }
+
+    function startReview(mode) {
+      closeReviewChoiceModal();
+      reviewMode = mode;
+
+      const unmasteredOnly = document.getElementById("reviewFilterUnmastered").checked;
+      if (unmasteredOnly) {
+        reviewDeck = words.filter(w => w.status !== "熟記");
+        if (reviewDeck.length === 0) {
+          alert("太棒了！目前所有單字皆已熟記！系統將自動抽取全部單字進行溫故知新。");
+          reviewDeck = [...words];
+        }
+      } else {
+        reviewDeck = [...words];
+      }
+
+      if (reviewDeck.length === 0) {
+        alert("詞庫中尚無任何單字，請先新增單字後再開始複習！");
+        return;
+      }
+
+      reviewDeck = shuffleArray(reviewDeck);
+      reviewIndex = 0;
+      reviewResults = { correct: 0, wrong: 0, total: reviewDeck.length };
+
+      if (mode === "卡牌") {
+        initFlashcardMode();
+      } else {
+        initSpellingMode();
+      }
+    }
+
+    function exitReview() {
+      document.getElementById("flashcardOverlay").classList.remove("show");
+      document.getElementById("spellingOverlay").classList.remove("show");
+      window.removeEventListener("keydown", handleReviewKeydown);
+      renderWordList();
+    }
+
+    /* --------------------------------------------------------------------------
+       7. Review Mode A: 3D Flashcard
+       -------------------------------------------------------------------------- */
+    let currentReviewWord = null;
+    let isCardFlipped = false;
+
+    function initFlashcardMode() {
+      document.getElementById("flashcardOverlay").classList.add("show");
+      window.addEventListener("keydown", handleReviewKeydown);
+      showFlashcard(reviewIndex);
+    }
+
+    function showFlashcard(index) {
+      if (index >= reviewDeck.length) {
+        finishReview();
+        return;
+      }
+
+      currentReviewWord = reviewDeck[index];
+      isCardFlipped = false;
+      document.getElementById("flashcardInner").classList.remove("is-flipped");
+
+      document.getElementById("flashcardProgress").textContent = `卡片 ${index + 1} / ${reviewDeck.length}`;
+      document.getElementById("fcFrontType").textContent = currentReviewWord.type || "n.";
+      document.getElementById("fcFrontWord").textContent = currentReviewWord.word;
+
+      document.getElementById("fcBackType").textContent = currentReviewWord.type || "n.";
+      document.getElementById("fcBackMeaning").textContent = currentReviewWord.meaning;
+
+      const exEl = document.getElementById("fcBackExample");
+      if (currentReviewWord.exampleEn) {
+        exEl.style.display = "block";
+        document.getElementById("fcBackExEn").textContent = currentReviewWord.exampleEn;
+        document.getElementById("fcBackExZh").textContent = currentReviewWord.exampleZh || "";
+      } else {
+        exEl.style.display = "none";
+      }
+    }
+
+    function flipCurrentCard() {
+      isCardFlipped = !isCardFlipped;
+      document.getElementById("flashcardInner").classList.toggle("is-flipped", isCardFlipped);
+    }
+
+    function rateFlashcard(status) {
+      if (!currentReviewWord) return;
+      const original = words.find(w => w.id === currentReviewWord.id);
+      if (original) {
+        original.status = status;
+        saveWordsToStorage();
+      }
+
+      if (status === "熟記") {
+        reviewResults.correct++;
+      } else {
+        reviewResults.wrong++;
+      }
+
+      reviewIndex++;
+      showFlashcard(reviewIndex);
+    }
+
+    function handleReviewKeydown(e) {
+      if (document.getElementById("flashcardOverlay").classList.contains("show")) {
+        if (e.code === "Space") {
+          e.preventDefault();
+          flipCurrentCard();
+        } else if (e.key === "1" || e.key === "ArrowLeft") {
+          e.preventDefault();
+          rateFlashcard("陌生");
+        } else if (e.key === "2" || e.key === "ArrowRight") {
+          e.preventDefault();
+          rateFlashcard("熟記");
+        } else if (e.key === "Escape") {
+          exitReview();
+        }
+      }
+    }
+
+    /* --------------------------------------------------------------------------
+       8. Review Mode B: Spelling Challenge
+       -------------------------------------------------------------------------- */
+    let currentSpellingWord = null;
+    let revealedHintsCount = 0;
+
+    function initSpellingMode() {
+      alert("請勿使用『華碩智慧輸入法』來進行測驗，因本輸入會自動跳出要輸入的文字");
+      document.getElementById("spellingOverlay").classList.add("show");
+      showSpellingQuestion(reviewIndex);
+    }
+
+    function showSpellingQuestion(index) {
+      if (index >= reviewDeck.length) {
+        finishReview();
+        return;
+      }
+
+      currentSpellingWord = reviewDeck[index];
+      revealedHintsCount = 0;
+
+      document.getElementById("spellingProgress").textContent = `題目 ${index + 1} / ${reviewDeck.length} · 答對: ${reviewResults.correct}`;
+      document.getElementById("spellingType").textContent = currentSpellingWord.type || "n.";
+      document.getElementById("spellingMeaning").textContent = currentSpellingWord.meaning;
+      document.getElementById("spellingHint").textContent = "";
+
+      const input = document.getElementById("spellingInput");
+      input.value = "";
+      input.className = "spelling-input";
+      setTimeout(() => input.focus(), 100);
+    }
+
+    function handleSpellingKey(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        submitSpellingAnswer();
+      }
+    }
+
+    function submitSpellingAnswer() {
+      const input = document.getElementById("spellingInput");
+      const answer = input.value.trim().toLowerCase();
+      const target = currentSpellingWord.word.trim().toLowerCase();
+
+      if (!answer) return;
+
+      if (answer === target) {
+        input.classList.remove("wrong");
+        input.classList.add("correct");
+        speakText(currentSpellingWord.word);
+
+        const original = words.find(w => w.id === currentSpellingWord.id);
+        if (original && original.status !== "熟記") {
+          original.status = "熟記";
+          saveWordsToStorage();
+        }
+
+        reviewResults.correct++;
+
+        setTimeout(() => {
+          reviewIndex++;
+          showSpellingQuestion(reviewIndex);
+        }, 800);
+      } else {
+        input.classList.remove("correct");
+        input.classList.add("wrong");
+
+        const original = words.find(w => w.id === currentSpellingWord.id);
+        if (original) {
+          original.status = "陌生";
+          saveWordsToStorage();
+        }
+
+        reviewResults.wrong++;
+        showSpellingHint();
+      }
+    }
+
+    function showSpellingHint() {
+      const target = currentSpellingWord.word;
+      revealedHintsCount = Math.min(revealedHintsCount + 1, target.length);
+      let hintStr = "";
+      for (let i = 0; i < target.length; i++) {
+        if (i < revealedHintsCount) {
+          hintStr += target[i] + " ";
+        } else {
+          hintStr += "_ ";
+        }
+      }
+      document.getElementById("spellingHint").textContent = `線索: ${hintStr.trim()}`;
+    }
+
+    function revealSpellingAnswer() {
+      const input = document.getElementById("spellingInput");
+      input.value = currentSpellingWord.word;
+      document.getElementById("spellingHint").textContent = `正確答案: ${currentSpellingWord.word}`;
+      speakText(currentSpellingWord.word);
+    }
+
+    /* --------------------------------------------------------------------------
+       9. Review Finish & Summary
+       -------------------------------------------------------------------------- */
+    function finishReview() {
+      exitReview();
+      const total = reviewResults.total;
+      const rate = total === 0 ? 0 : Math.round((reviewResults.correct / total) * 100);
+
+      document.getElementById("summaryScore").textContent = `${rate}%`;
+      document.getElementById("sumCorrectCount").textContent = reviewResults.correct;
+      document.getElementById("sumWrongCount").textContent = reviewResults.wrong;
+      document.getElementById("sumTotalCount").textContent = total;
+
+      const subTitle = document.getElementById("summarySubTitle");
+      if (rate >= 90) subTitle.textContent = "太神了！幾乎完全掌握所有複習單字！🌟";
+      else if (rate >= 60) subTitle.textContent = "表現不錯！已熟記大部分單字，繼續保持！💪";
+      else subTitle.textContent = "多複習幾次，很快就能完全掌握囉！🌱";
+
+      document.getElementById("summaryModal").classList.add("show");
+    }
+
+    function closeSummaryModal() {
+      document.getElementById("summaryModal").classList.remove("show");
+      renderWordList();
+    }
+
+    /* --------------------------------------------------------------------------
+       10. Backup, Restore & Clear
+       -------------------------------------------------------------------------- */
+    function openBackupModal() {
+      document.getElementById("backupModal").classList.add("show");
+    }
+
+    function closeBackupModal() {
+      document.getElementById("backupModal").classList.remove("show");
+    }
+
+    function exportData() {
+      if (words.length === 0) {
+        alert("目前詞庫尚無單字可供匯出。");
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(words, null, 2));
+      const downloadAnchor = document.createElement("a");
+      const dateStr = new Date().toISOString().slice(0, 10);
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `WordPulse_Vocabulary_${dateStr}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (Array.isArray(parsed)) {
+            words = parsed;
+            saveWordsToStorage();
+            renderWordList();
+            alert(`成功匯入 ${words.length} 個單字！`);
+            closeBackupModal();
+          } else {
+            alert("匯入失敗：檔案格式不正確，需為單字陣列 JSON。");
+          }
+        } catch (err) {
+          alert("讀取檔案出錯：" + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function clearAllWords() {
+      if (words.length === 0) {
+        alert("詞庫目前已是清空狀態。");
+        return;
+      }
+      if (confirm("確定要清空所有單字資料嗎？此操作將清除全部單字與學習記錄。")) {
+        words = [];
+        saveWordsToStorage();
+        renderWordList();
+        closeBackupModal();
+        alert("詞庫已成功清空！");
+      }
+    }
+
+    /* --------------------------------------------------------------------------
+       11. Utilities
+       -------------------------------------------------------------------------- */
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return "";
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function escapeQuotes(text) {
+      if (!text) return "";
+      return text.replace(/'/g, "\\'");
+    }
+
+    // Modal click outside to close
+    window.onclick = function (event) {
+      if (event.target.classList.contains("modal-backdrop")) {
+        event.target.classList.remove("show");
+      }
+    };
+
+    /* --------------------------------------------------------------------------
+       Initialization
+       -------------------------------------------------------------------------- */
+    loadWords();
+    renderWordList();
+  </script>
+</body>
+
+</html>
