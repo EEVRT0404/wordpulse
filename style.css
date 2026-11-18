@@ -654,8 +654,8 @@ body {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(8px) saturate(1.15);
   z-index: 1000;
   justify-content: center;
   align-items: center;
@@ -668,7 +668,10 @@ body {
 }
 
 .modal-window {
+  position: relative;
+  isolation: isolate;
   background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
   width: 100%;
@@ -677,9 +680,27 @@ body {
   animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.modal-window::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  width: 180px;
+  height: 110px;
+  pointer-events: none;
+  opacity: 0.8;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 110'%3E%3Cpath d='M67 0h113v110C127 91 115 56 67 0Z' fill='%23eef2ff'/%3E%3Cpath d='M111 0h69v69C151 63 139 40 111 0Z' fill='%23e0e7ff'/%3E%3Ccircle cx='145' cy='28' r='4' fill='%23818cf8'/%3E%3C/svg%3E") top right / contain no-repeat;
+}
+
+.modal-window > * {
+  position: relative;
+  z-index: 1;
+}
+
 .modal-header {
   padding: 20px 24px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -688,6 +709,18 @@ body {
 .modal-header h3 {
   font-size: 1.2rem;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-header h3::before {
+  content: "";
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 11px;
+  background: #eef2ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='m16 4 3.2 8.8L28 16l-8.8 3.2L16 28l-3.2-8.8L4 16l8.8-3.2L16 4Z' fill='none' stroke='%236366f1' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") center / 22px no-repeat;
 }
 
 .close-btn {
@@ -704,6 +737,140 @@ body {
 .close-btn:hover {
   color: var(--text-primary);
   background: var(--bg-subtle);
+}
+
+.app-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(10px) saturate(1.2);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.app-dialog-backdrop.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.app-dialog-window {
+  --dialog-accent: #6366f1;
+  --dialog-accent-soft: #eef2ff;
+  position: relative;
+  width: min(100%, 430px);
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.25), 0 4px 16px rgba(99, 102, 241, 0.12);
+  transform: translateY(14px) scale(0.97);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-dialog-backdrop.show .app-dialog-window {
+  transform: translateY(0) scale(1);
+}
+
+.app-dialog-window[data-variant="success"] {
+  --dialog-accent: #059669;
+  --dialog-accent-soft: #ecfdf5;
+}
+
+.app-dialog-window[data-variant="error"] {
+  --dialog-accent: #dc2626;
+  --dialog-accent-soft: #fef2f2;
+}
+
+.app-dialog-window[data-variant="confirm"] {
+  --dialog-accent: #4f46e5;
+  --dialog-accent-soft: #eef2ff;
+}
+
+.app-dialog-art {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 150px;
+  pointer-events: none;
+}
+
+.app-dialog-content {
+  position: relative;
+  padding: 28px 30px 30px;
+  text-align: center;
+}
+
+.app-dialog-icon {
+  width: 68px;
+  height: 68px;
+  margin: 10px auto 16px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(99, 102, 241, 0.16);
+  border-radius: 22px;
+  background: var(--dialog-accent-soft);
+  color: var(--dialog-accent);
+  box-shadow: 0 10px 24px rgba(99, 102, 241, 0.12);
+}
+
+.app-dialog-icon svg {
+  width: 36px;
+  height: 36px;
+}
+
+.app-dialog-eyebrow {
+  margin-bottom: 5px;
+  color: var(--dialog-accent);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+.app-dialog-content h3 {
+  color: var(--text-primary);
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.app-dialog-content p {
+  margin: 10px 0 24px;
+  color: var(--text-secondary);
+  font-size: 0.94rem;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+.app-dialog-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.app-dialog-actions .btn {
+  min-width: 116px;
+}
+
+.app-dialog-actions [hidden] {
+  display: none;
+}
+
+body.dialog-open {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-dialog-backdrop,
+  .app-dialog-window {
+    transition: none;
+  }
 }
 
 .modal-body {
@@ -1126,5 +1293,19 @@ textarea.form-control {
 
   .flashcard-meaning {
     font-size: 1.6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-dialog-content {
+    padding: 24px 20px;
+  }
+
+  .app-dialog-actions {
+    flex-direction: column-reverse;
+  }
+
+  .app-dialog-actions .btn {
+    width: 100%;
   }
 }

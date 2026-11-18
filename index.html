@@ -423,6 +423,37 @@
     </div>
   </div>
 
+  <div class="app-dialog-backdrop" id="appDialogBackdrop">
+    <section class="app-dialog-window" id="appDialogWindow" role="dialog" aria-modal="true"
+      aria-labelledby="appDialogTitle" aria-describedby="appDialogMessage">
+      <svg class="app-dialog-art" viewBox="0 0 420 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <linearGradient id="dialogGradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#818cf8" />
+            <stop offset="1" stop-color="#c4b5fd" />
+          </linearGradient>
+        </defs>
+        <circle cx="340" cy="5" r="95" fill="url(#dialogGradient)" opacity=".16" />
+        <circle cx="385" cy="30" r="53" fill="#38bdf8" opacity=".12" />
+        <path d="M230 110c40-47 79-43 115-16s54 25 90-7v63H230z" fill="#a5b4fc" opacity=".22" />
+        <path d="M266 112c35-30 70-28 103-7s47 21 66 8" fill="none" stroke="#818cf8" stroke-width="2"
+          stroke-linecap="round" opacity=".55" />
+        <path d="M345 43l4 11 11 4-11 4-4 11-4-11-11-4 11-4z" fill="#fff" opacity=".9" />
+        <circle cx="300" cy="75" r="3" fill="#6366f1" opacity=".65" />
+      </svg>
+      <div class="app-dialog-content">
+        <div class="app-dialog-icon" id="appDialogIcon" aria-hidden="true"></div>
+        <div class="app-dialog-eyebrow">WORDPULSE</div>
+        <h3 id="appDialogTitle">提示</h3>
+        <p id="appDialogMessage"></p>
+        <div class="app-dialog-actions">
+          <button class="btn btn-secondary" id="appDialogCancel" onclick="closeAppDialog(false)" hidden>取消</button>
+          <button class="btn btn-primary" id="appDialogAccept" onclick="closeAppDialog(true)">知道了</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
   <!-- ========================================================================
        APPLICATION LOGIC SCRIPT
        ======================================================================== -->
@@ -434,6 +465,71 @@
     let words = [];
     let currentFilter = "全部";
     let searchQuery = "";
+    const appDialogBackdrop = document.getElementById("appDialogBackdrop");
+    const appDialogQueue = [];
+    let activeAppDialog = null;
+
+    function showAppDialog(message, options = {}) {
+      return new Promise(resolve => {
+        appDialogQueue.push({ message, options, resolve });
+        showNextAppDialog();
+      });
+    }
+
+    function showNextAppDialog() {
+      if (activeAppDialog || appDialogQueue.length === 0) return;
+
+      activeAppDialog = appDialogQueue.shift();
+      const { message, options } = activeAppDialog;
+      const isConfirm = options.confirm === true;
+      const variant = options.variant || (isConfirm ? "confirm" : "info");
+      const icons = {
+        info: '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17" fill="none" stroke="currentColor" stroke-width="3"/><path d="M24 21v11m0-18h.02" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/></svg>',
+        confirm: '<svg viewBox="0 0 48 48"><path d="M24 7 43 40H5L24 7Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M24 18v10m0 6h.02" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/></svg>',
+        success: '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17" fill="none" stroke="currentColor" stroke-width="3"/><path d="m15 24 6 6 12-13" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        error: '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17" fill="none" stroke="currentColor" stroke-width="3"/><path d="m18 18 12 12m0-12L18 30" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/></svg>'
+      };
+
+      document.getElementById("appDialogWindow").dataset.variant = variant;
+      document.getElementById("appDialogWindow").setAttribute("role", isConfirm ? "alertdialog" : "dialog");
+      document.getElementById("appDialogIcon").innerHTML = icons[variant] || icons.info;
+      document.getElementById("appDialogTitle").textContent = options.title || (isConfirm ? "請確認操作" : "WordPulse 提示");
+      document.getElementById("appDialogMessage").textContent = message;
+
+      const cancelButton = document.getElementById("appDialogCancel");
+      cancelButton.hidden = !isConfirm;
+      cancelButton.textContent = options.cancelText || "取消";
+      document.getElementById("appDialogAccept").textContent =
+        options.confirmText || (isConfirm ? "確認" : "知道了");
+
+      document.body.classList.add("dialog-open");
+      appDialogBackdrop.classList.add("show");
+      requestAnimationFrame(() => (isConfirm ? cancelButton : document.getElementById("appDialogAccept")).focus());
+    }
+
+    function closeAppDialog(confirmed) {
+      if (!activeAppDialog) return;
+
+      const { options, resolve } = activeAppDialog;
+      activeAppDialog = null;
+      appDialogBackdrop.classList.remove("show");
+      document.body.classList.remove("dialog-open");
+      resolve(options.confirm === true ? confirmed : true);
+      setTimeout(showNextAppDialog, 180);
+    }
+
+    appDialogBackdrop.addEventListener("click", event => {
+      if (event.target === appDialogBackdrop) closeAppDialog(false);
+    });
+
+    window.addEventListener("keydown", event => {
+      if (!activeAppDialog) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        closeAppDialog(false);
+      }
+    });
 
     function loadWords() {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -469,29 +565,28 @@
     }
 
     /* --------------------------------------------------------------------------
-       3. Speech Synthesis (TTS)
+       3. Google Translate Text-to-Speech
        -------------------------------------------------------------------------- */
-    function speakText(text) {
-      if (!window.speechSynthesis) {
-        alert("您的瀏覽器不支援語音合成發音。");
-        return;
-      }
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "en-US";
-      utterance.rate = 0.9;
+    const pronunciationAudio = new Audio();
+    let pronunciationErrorShown = false;
 
-      const voices = window.speechSynthesis.getVoices();
-      const enVoice = voices.find(v => v.lang.startsWith("en-US") || v.lang.startsWith("en-GB"));
-      if (enVoice) utterance.voice = enVoice;
-
-      window.speechSynthesis.speak(utterance);
+    function reportPronunciationError() {
+      if (pronunciationErrorShown) return;
+      pronunciationErrorShown = true;
+      showAppDialog("Google 翻譯語音播放失敗，請確認網路連線後再試。", { variant: "error", title: "語音播放失敗" });
     }
 
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.getVoices();
-      };
+    pronunciationAudio.addEventListener("error", reportPronunciationError);
+
+    function speakText(text) {
+      if (!text) {
+        return;
+      }
+      pronunciationErrorShown = false;
+      pronunciationAudio.pause();
+      pronunciationAudio.currentTime = 0;
+      pronunciationAudio.src = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(text)}`;
+      pronunciationAudio.play().catch(reportPronunciationError);
     }
 
     /* --------------------------------------------------------------------------
@@ -702,7 +797,7 @@
       const note = document.getElementById("noteInput").value.trim();
 
       if (!word || !meaning) {
-        alert("請至少填寫「英文單字」與「中文釋義」！");
+        showAppDialog("請至少填寫「英文單字」與「中文釋義」！", { variant: "error", title: "資料尚未填寫完整" });
         return;
       }
 
@@ -732,10 +827,15 @@
       closeWordModal();
     }
 
-    function deleteWord(id) {
+    async function deleteWord(id) {
       const target = words.find(w => w.id === id);
       if (!target) return;
-      if (confirm(`確定要刪除「${target.word}」嗎？`)) {
+      if (await showAppDialog(`確定要刪除「${target.word}」嗎？`, {
+        confirm: true,
+        variant: "confirm",
+        title: "刪除單字",
+        confirmText: "刪除"
+      })) {
         words = words.filter(w => w.id !== id);
         saveWordsToStorage();
         renderWordList();
@@ -749,10 +849,11 @@
     let reviewIndex = 0;
     let reviewMode = ""; // '卡牌' or '拼字'
     let reviewResults = { correct: 0, wrong: 0, total: 0 };
+    let reviewStatusUpdates = new Map();
 
     function openReviewChoiceModal() {
       if (words.length === 0) {
-        alert("目前詞庫中尚無任何單字，請先點擊「新增單字」建立您的學習卡！");
+        showAppDialog("目前詞庫中尚無任何單字，請先點擊「新增單字」建立您的學習卡！");
         return;
       }
       document.getElementById("reviewChoiceModal").classList.add("show");
@@ -762,7 +863,7 @@
       document.getElementById("reviewChoiceModal").classList.remove("show");
     }
 
-    function startReview(mode) {
+    async function startReview(mode) {
       closeReviewChoiceModal();
       reviewMode = mode;
 
@@ -770,7 +871,10 @@
       if (unmasteredOnly) {
         reviewDeck = words.filter(w => w.status !== "熟記");
         if (reviewDeck.length === 0) {
-          alert("太棒了！目前所有單字皆已熟記！系統將自動抽取全部單字進行溫故知新。");
+          await showAppDialog("太棒了！目前所有單字皆已熟記！系統將自動抽取全部單字進行溫故知新。", {
+            variant: "success",
+            title: "複習提醒"
+          });
           reviewDeck = [...words];
         }
       } else {
@@ -778,18 +882,19 @@
       }
 
       if (reviewDeck.length === 0) {
-        alert("詞庫中尚無任何單字，請先新增單字後再開始複習！");
+        await showAppDialog("詞庫中尚無任何單字，請先新增單字後再開始複習！");
         return;
       }
 
       reviewDeck = shuffleArray(reviewDeck);
       reviewIndex = 0;
       reviewResults = { correct: 0, wrong: 0, total: reviewDeck.length };
+      reviewStatusUpdates = new Map();
 
       if (mode === "卡牌") {
         initFlashcardMode();
       } else {
-        initSpellingMode();
+        await initSpellingMode();
       }
     }
 
@@ -819,8 +924,8 @@
       }
 
       currentReviewWord = reviewDeck[index];
-      isCardFlipped = false;
       document.getElementById("flashcardInner").classList.remove("is-flipped");
+      isCardFlipped = false;
 
       document.getElementById("flashcardProgress").textContent = `卡片 ${index + 1} / ${reviewDeck.length}`;
       document.getElementById("fcFrontType").textContent = currentReviewWord.type || "n.";
@@ -846,11 +951,7 @@
 
     function rateFlashcard(status) {
       if (!currentReviewWord) return;
-      const original = words.find(w => w.id === currentReviewWord.id);
-      if (original) {
-        original.status = status;
-        saveWordsToStorage();
-      }
+      reviewStatusUpdates.set(currentReviewWord.id, status);
 
       if (status === "熟記") {
         reviewResults.correct++;
@@ -885,8 +986,10 @@
     let currentSpellingWord = null;
     let revealedHintsCount = 0;
 
-    function initSpellingMode() {
-      alert("請勿使用『華碩智慧輸入法』來進行測驗，因本輸入會自動跳出要輸入的文字");
+    async function initSpellingMode() {
+      await showAppDialog("請勿使用「華碩智慧輸入法」來進行測驗，避免自動帶出文字", {
+        title: "拼字測驗提醒"
+      });
       document.getElementById("spellingOverlay").classList.add("show");
       showSpellingQuestion(reviewIndex);
     }
@@ -928,13 +1031,7 @@
       if (answer === target) {
         input.classList.remove("wrong");
         input.classList.add("correct");
-        speakText(currentSpellingWord.word);
-
-        const original = words.find(w => w.id === currentSpellingWord.id);
-        if (original && original.status !== "熟記") {
-          original.status = "熟記";
-          saveWordsToStorage();
-        }
+        reviewStatusUpdates.set(currentSpellingWord.id, "熟記");
 
         reviewResults.correct++;
 
@@ -945,12 +1042,7 @@
       } else {
         input.classList.remove("correct");
         input.classList.add("wrong");
-
-        const original = words.find(w => w.id === currentSpellingWord.id);
-        if (original) {
-          original.status = "陌生";
-          saveWordsToStorage();
-        }
+        reviewStatusUpdates.set(currentSpellingWord.id, "陌生");
 
         reviewResults.wrong++;
         showSpellingHint();
@@ -981,8 +1073,21 @@
     /* --------------------------------------------------------------------------
        9. Review Finish & Summary
        -------------------------------------------------------------------------- */
-    function finishReview() {
+    async function finishReview() {
       exitReview();
+      if (reviewStatusUpdates.size > 0 && await showAppDialog("是否將本次複習的熟記／需加強結果更新到單字庫？", {
+        confirm: true,
+        variant: "confirm",
+        title: "更新單字熟練度",
+        confirmText: "更新詞庫"
+      })) {
+        reviewStatusUpdates.forEach((status, id) => {
+          const original = words.find(w => w.id === id);
+          if (original) original.status = status;
+        });
+        saveWordsToStorage();
+      }
+
       const total = reviewResults.total;
       const rate = total === 0 ? 0 : Math.round((reviewResults.correct / total) * 100);
 
@@ -1017,7 +1122,7 @@
 
     function exportData() {
       if (words.length === 0) {
-        alert("目前詞庫尚無單字可供匯出。");
+        showAppDialog("目前詞庫尚無單字可供匯出。");
         return;
       }
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(words, null, 2));
@@ -1035,36 +1140,44 @@
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = function (e) {
+      reader.onload = async function (e) {
         try {
           const parsed = JSON.parse(e.target.result);
           if (Array.isArray(parsed)) {
             words = parsed;
             saveWordsToStorage();
             renderWordList();
-            alert(`成功匯入 ${words.length} 個單字！`);
+            await showAppDialog(`成功匯入 ${words.length} 個單字！`, { variant: "success", title: "匯入完成" });
             closeBackupModal();
           } else {
-            alert("匯入失敗：檔案格式不正確，需為單字陣列 JSON。");
+            await showAppDialog("匯入失敗：檔案格式不正確，需為單字陣列 JSON。", {
+              variant: "error",
+              title: "匯入失敗"
+            });
           }
         } catch (err) {
-          alert("讀取檔案出錯：" + err.message);
+          await showAppDialog("讀取檔案出錯：" + err.message, { variant: "error", title: "讀取檔案失敗" });
         }
       };
       reader.readAsText(file);
     }
 
-    function clearAllWords() {
+    async function clearAllWords() {
       if (words.length === 0) {
-        alert("詞庫目前已是清空狀態。");
+        showAppDialog("詞庫目前已是清空狀態。");
         return;
       }
-      if (confirm("確定要清空所有單字資料嗎？此操作將清除全部單字與學習記錄。")) {
+      if (await showAppDialog("確定要清空所有單字資料嗎？此操作將清除全部單字與學習記錄。", {
+        confirm: true,
+        variant: "error",
+        title: "清空詞庫",
+        confirmText: "清空全部"
+      })) {
         words = [];
         saveWordsToStorage();
         renderWordList();
         closeBackupModal();
-        alert("詞庫已成功清空！");
+        showAppDialog("詞庫已成功清空！", { variant: "success", title: "詞庫已清空" });
       }
     }
 
