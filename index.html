@@ -674,28 +674,58 @@
     }
 
     /* --------------------------------------------------------------------------
-       3. Google Translate Text-to-Speech
+       3. Pronunciation Audio & Browser Fallback
        -------------------------------------------------------------------------- */
     const pronunciationAudio = new Audio();
     let pronunciationErrorShown = false;
+    let activePronunciationRequestId = 0;
+    let pronunciationFallbackRequestId = -1;
+    let pronunciationAudioErrorHandler = null;
 
-    function reportPronunciationError() {
+    function reportPronunciationError(message) {
       if (pronunciationErrorShown) return;
       pronunciationErrorShown = true;
-      showAppDialog("Google 翻譯語音播放失敗，請確認網路連線後再試。", { variant: "error", title: "語音播放失敗" });
+      showAppDialog(message, { variant: "error", title: "語音播放失敗" });
     }
 
-    pronunciationAudio.addEventListener("error", reportPronunciationError);
+    function playBrowserPronunciation(text, requestId) {
+      if (requestId !== activePronunciationRequestId || pronunciationFallbackRequestId === requestId) return;
+      pronunciationFallbackRequestId = requestId;
+      pronunciationAudio.pause();
+
+      if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+        reportPronunciationError("線上語音播放失敗，且此瀏覽器不支援內建語音朗讀。");
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
+      utterance.onerror = () => {
+        if (requestId !== activePronunciationRequestId) return;
+        reportPronunciationError("線上與瀏覽器內建語音皆無法播放，請確認裝置音量或英文語音設定。");
+      };
+      window.speechSynthesis.speak(utterance);
+    }
 
     function speakText(text) {
       if (!text) {
         return;
       }
       pronunciationErrorShown = false;
+      const requestId = ++activePronunciationRequestId;
+      if (pronunciationAudioErrorHandler) {
+        pronunciationAudio.removeEventListener("error", pronunciationAudioErrorHandler);
+      }
+      pronunciationAudioErrorHandler = () => playBrowserPronunciation(text, requestId);
+      pronunciationAudio.addEventListener("error", pronunciationAudioErrorHandler, { once: true });
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
       pronunciationAudio.pause();
       pronunciationAudio.currentTime = 0;
       pronunciationAudio.src = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(text)}`;
-      pronunciationAudio.play().catch(reportPronunciationError);
+      pronunciationAudio.play().catch(() => playBrowserPronunciation(text, requestId));
     }
 
     /* --------------------------------------------------------------------------
