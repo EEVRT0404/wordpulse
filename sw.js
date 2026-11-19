@@ -2,7 +2,7 @@
    WordPulse Service Worker - Offline Cache & PWA Support
    ========================================================================== */
 
-const CACHE_NAME = 'wordpulse-cache-v3';
+const CACHE_NAME = 'wordpulse-cache-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -41,6 +41,36 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
+
+  const requestUrl = new URL(event.request.url);
+  const isAppShellRequest = event.request.mode === 'navigate' ||
+    (requestUrl.origin === self.location.origin && /\.(html|css|js|json)$/i.test(requestUrl.pathname));
+
+  if (isAppShellRequest) {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(CACHE_NAME);
+        try {
+          const networkResponse = await fetch(event.request);
+          if (networkResponse && networkResponse.status === 200) {
+            await cache.put(event.request, networkResponse.clone());
+          }
+          return networkResponse;
+        } catch (error) {
+          const cachedResponse = await cache.match(event.request);
+          if (cachedResponse) return cachedResponse;
+
+          if (event.request.mode === 'navigate') {
+            const offlinePage = await cache.match('./index.html');
+            if (offlinePage) return offlinePage;
+          }
+
+          throw error;
+        }
+      })()
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
