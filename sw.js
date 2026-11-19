@@ -2,11 +2,11 @@
    WordPulse Service Worker - Offline Cache & PWA Support
    ========================================================================== */
 
-const CACHE_NAME = 'wordpulse-cache-v4';
+const CACHE_NAME = 'wordpulse-cache-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './style.css',
+  './style.css?v=5',
   './manifest.json',
   './Logo.png',
   './icon 192.png',
@@ -37,7 +37,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch Event: Cache First, fallback to network
+// Fetch Event: Network First for app shell, cache first for other assets
 self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
