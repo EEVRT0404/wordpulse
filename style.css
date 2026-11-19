@@ -1164,64 +1164,80 @@ textarea.form-control {
   flex: 0 0 auto;
 }
 
-.settings-option .theme-switch {
-  margin-left: auto;
+.theme-options {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  border: 0;
 }
 
-.theme-switch {
-  position: relative;
-  display: inline-flex;
-  flex: 0 0 48px;
-  width: 48px;
-  height: 28px;
+.theme-choice {
+  display: block;
   cursor: pointer;
 }
 
-.theme-switch input {
-  position: absolute;
-  z-index: 1;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.theme-switch-track {
-  position: absolute;
-  inset: 0;
+.theme-choice-card {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 12px;
+  min-height: 68px;
+  padding: 12px 14px;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-full);
-  background: var(--bg-subtle);
-  transition: background var(--transition-fast), border-color var(--transition-fast);
-}
-
-.theme-switch-track::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
+  border-radius: var(--radius-md);
   background: var(--bg-card);
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--transition-fast);
+  transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.theme-switch input:checked + .theme-switch-track {
+.theme-choice:hover .theme-choice-card {
+  border-color: var(--border-focus);
+}
+
+.theme-choice-input:checked + .theme-choice-card {
   border-color: var(--primary);
-  background: var(--primary);
+  background: var(--primary-light);
+  box-shadow: 0 0 0 1px var(--primary);
 }
 
-.theme-switch input:checked + .theme-switch-track::after {
-  transform: translateX(20px);
-}
-
-.theme-switch input:focus-visible + .theme-switch-track {
+.theme-choice-input:focus-visible + .theme-choice-card {
   outline: 3px solid var(--primary-glow);
   outline-offset: 3px;
+}
+
+.theme-choice-icon {
+  width: 20px;
+  height: 20px;
+  justify-self: center;
+  color: var(--primary);
+}
+
+.theme-choice-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.theme-choice-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.theme-choice-description {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.theme-choice-check {
+  width: 18px;
+  height: 18px;
+  color: var(--primary);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.theme-choice-input:checked + .theme-choice-card .theme-choice-check {
+  opacity: 1;
 }
 
 .sr-only {

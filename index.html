@@ -118,6 +118,14 @@
     <symbol id="icon-moon" viewBox="0 0 24 24">
       <path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
     </symbol>
+    <symbol id="icon-sun" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="icon-monitor" viewBox="0 0 24 24">
+      <rect x="3" y="4" width="18" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M8 21h8m-4-4v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </symbol>
     <symbol id="icon-database" viewBox="0 0 24 24">
       <ellipse cx="12" cy="5" rx="8" ry="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
       <path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" fill="none" stroke="currentColor" stroke-width="1.8"/>
@@ -499,19 +507,48 @@
           <section class="settings-content" id="appearanceSettings" aria-labelledby="appearanceTitle" hidden>
             <div class="settings-page-heading">
               <h4 id="appearanceTitle">外觀</h4>
-              <p>選擇適合目前環境的顯示配色。</p>
+              <p>選擇外觀主題，設定會保存在此裝置。</p>
             </div>
 
-            <div class="settings-option">
-              <div class="settings-option-copy">
-                <h5><svg class="icon" aria-hidden="true"><use href="#icon-moon"></use></svg> 深色模式</h5>
-                <p>使用深色背景與配色，設定會保存在此裝置。</p>
-              </div>
-              <label class="theme-switch">
-                <input type="checkbox" id="darkModeToggle" aria-label="啟用深色模式" onchange="toggleDarkMode()">
-                <span class="theme-switch-track" aria-hidden="true"></span>
+            <fieldset class="theme-options">
+              <legend class="sr-only">選擇外觀主題</legend>
+              <label class="theme-choice">
+                <input class="theme-choice-input sr-only" type="radio" name="themeMode" value="system"
+                  onchange="setThemeMode(this.value)">
+                <span class="theme-choice-card">
+                  <svg class="icon theme-choice-icon" aria-hidden="true"><use href="#icon-monitor"></use></svg>
+                  <span class="theme-choice-copy">
+                    <span class="theme-choice-title">系統預設</span>
+                    <span class="theme-choice-description">跟隨裝置的淺色或深色設定</span>
+                  </span>
+                  <svg class="icon theme-choice-check" aria-hidden="true"><use href="#icon-check-circle"></use></svg>
+                </span>
               </label>
-            </div>
+              <label class="theme-choice">
+                <input class="theme-choice-input sr-only" type="radio" name="themeMode" value="light"
+                  onchange="setThemeMode(this.value)">
+                <span class="theme-choice-card">
+                  <svg class="icon theme-choice-icon" aria-hidden="true"><use href="#icon-sun"></use></svg>
+                  <span class="theme-choice-copy">
+                    <span class="theme-choice-title">淺色</span>
+                    <span class="theme-choice-description">使用明亮背景與配色</span>
+                  </span>
+                  <svg class="icon theme-choice-check" aria-hidden="true"><use href="#icon-check-circle"></use></svg>
+                </span>
+              </label>
+              <label class="theme-choice">
+                <input class="theme-choice-input sr-only" type="radio" name="themeMode" value="dark"
+                  onchange="setThemeMode(this.value)">
+                <span class="theme-choice-card">
+                  <svg class="icon theme-choice-icon" aria-hidden="true"><use href="#icon-moon"></use></svg>
+                  <span class="theme-choice-copy">
+                    <span class="theme-choice-title">深色</span>
+                    <span class="theme-choice-description">使用深色背景與配色</span>
+                  </span>
+                  <svg class="icon theme-choice-check" aria-hidden="true"><use href="#icon-check-circle"></use></svg>
+                </span>
+              </label>
+            </fieldset>
           </section>
 
           <section class="settings-content" id="dataManagementSettings" aria-labelledby="dataManagementTitle">
@@ -596,6 +633,7 @@
        -------------------------------------------------------------------------- */
     const STORAGE_KEY = "wordpulse_user_words_v1";
     const THEME_STORAGE_KEY = "wordpulse_theme_v1";
+    const systemThemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
     let words = [];
     let currentFilter = "全部";
     let searchQuery = "";
@@ -1300,18 +1338,35 @@
       });
     }
 
-    function loadAppearance() {
-      const isDark = localStorage.getItem(THEME_STORAGE_KEY) === "dark";
+    function applyThemeMode(mode) {
+      const isDark = mode === "dark" || (mode === "system" && systemThemeQuery.matches);
       document.documentElement.dataset.theme = isDark ? "dark" : "light";
-      document.getElementById("darkModeToggle").checked = isDark;
       document.getElementById("themeColorMeta").content = isDark ? "#0b1120" : "#6366f1";
     }
 
-    function toggleDarkMode() {
-      const isDark = document.getElementById("darkModeToggle").checked;
-      document.documentElement.dataset.theme = isDark ? "dark" : "light";
-      document.getElementById("themeColorMeta").content = isDark ? "#0b1120" : "#6366f1";
-      localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light");
+    function loadAppearance() {
+      const savedMode = localStorage.getItem(THEME_STORAGE_KEY);
+      const mode = ["system", "light", "dark"].includes(savedMode) ? savedMode : "system";
+      if (savedMode !== mode) localStorage.setItem(THEME_STORAGE_KEY, mode);
+      document.querySelector(`input[name="themeMode"][value="${mode}"]`).checked = true;
+      applyThemeMode(mode);
+
+      const handleSystemThemeChange = () => {
+        if (localStorage.getItem(THEME_STORAGE_KEY) === "system") applyThemeMode("system");
+      };
+      if (typeof systemThemeQuery.addEventListener === "function") {
+        systemThemeQuery.addEventListener("change", handleSystemThemeChange);
+      } else {
+        systemThemeQuery.addListener(handleSystemThemeChange);
+      }
+    }
+
+    function setThemeMode(mode) {
+      if (!["system", "light", "dark"].includes(mode)) {
+        throw new Error(`Unsupported theme mode: ${mode}`);
+      }
+      localStorage.setItem(THEME_STORAGE_KEY, mode);
+      applyThemeMode(mode);
     }
 
     function exportData() {
