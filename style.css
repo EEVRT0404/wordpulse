@@ -59,6 +59,21 @@
   padding: 0;
 }
 
+.icon-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex: 0 0 auto;
+  vertical-align: -0.15em;
+}
+
 body {
   font-family: "Outfit", "Plus Jakarta Sans", "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
@@ -172,6 +187,11 @@ body {
   font-size: 20px;
 }
 
+.stat-icon .icon {
+  width: 1.25em;
+  height: 1.25em;
+}
+
 .stat-icon.total { background: #e0e7ff; color: #4338ca; }
 .stat-icon.mastered { background: #dcfce7; color: #15803d; }
 .stat-icon.learning { background: #fef3c7; color: #b45309; }
@@ -263,6 +283,11 @@ body {
   color: var(--text-muted);
   pointer-events: none;
   font-size: 16px;
+}
+
+.search-icon .icon {
+  width: 1em;
+  height: 1em;
 }
 
 .filter-group {
@@ -472,6 +497,11 @@ body {
   transform: scale(1.08);
 }
 
+.speech-btn .icon {
+  width: 18px;
+  height: 18px;
+}
+
 .speech-btn.speaking {
   animation: pulse 1s infinite;
   background: #10b981;
@@ -510,6 +540,11 @@ body {
   gap: 4px;
   cursor: pointer;
   transition: all var(--transition-fast);
+}
+
+.badge-status .status-icon {
+  width: 1em;
+  height: 1em;
 }
 
 .badge-status.熟記 {
@@ -611,6 +646,11 @@ body {
   font-size: 14px;
 }
 
+.card-ops .icon {
+  width: 16px;
+  height: 16px;
+}
+
 .card-ops button:hover {
   color: var(--text-primary);
   background: var(--bg-subtle);
@@ -634,6 +674,11 @@ body {
 .empty-icon {
   font-size: 48px;
   margin-bottom: 16px;
+}
+
+.empty-icon .icon {
+  width: 1em;
+  height: 1em;
 }
 
 .empty-state h3 {
@@ -737,6 +782,12 @@ body {
 .close-btn:hover {
   color: var(--text-primary);
   background: var(--bg-subtle);
+}
+
+.close-btn .icon {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
 }
 
 .app-dialog-backdrop {
@@ -928,6 +979,130 @@ textarea.form-control {
   background: var(--bg-subtle);
 }
 
+.settings-window {
+  max-width: 860px;
+}
+
+.settings-body {
+  padding: 0;
+}
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  min-height: 360px;
+}
+
+.settings-nav {
+  padding: 20px 14px;
+  background: var(--bg-subtle);
+  border-right: 1px solid var(--border-color);
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: var(--radius-md);
+  color: var(--primary-hover);
+  background: var(--primary-light);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.settings-nav-item .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.settings-content {
+  min-width: 0;
+  padding: 24px;
+}
+
+.settings-page-heading {
+  margin-bottom: 10px;
+}
+
+.settings-page-heading h4 {
+  margin-bottom: 4px;
+  font-size: 1.1rem;
+}
+
+.settings-page-heading p,
+.settings-option-copy p {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.settings-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.settings-option:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.settings-option-copy {
+  min-width: 0;
+}
+
+.settings-option-copy h5 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.settings-option-copy h5 .icon {
+  width: 16px;
+  height: 16px;
+  color: var(--primary);
+}
+
+.settings-option-danger h5 .icon {
+  color: #dc2626;
+}
+
+.settings-option .btn {
+  flex: 0 0 auto;
+}
+
+.file-picker {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.visually-hidden-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.file-picker:focus-within .btn {
+  outline: 3px solid var(--primary-glow);
+  outline-offset: 2px;
+}
+
 /* ==========================================================================
    Review Mode - 3D Flashcard
    ========================================================================== */
@@ -973,6 +1148,14 @@ textarea.form-control {
   font-weight: 600;
   font-size: 0.85rem;
   transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.review-close .icon {
+  width: 16px;
+  height: 16px;
 }
 
 .review-close:hover {
@@ -1066,6 +1249,11 @@ textarea.form-control {
   color: #64748b;
 }
 
+.flashcard-hint-text .icon {
+  width: 1em;
+  height: 1em;
+}
+
 .review-controls {
   width: 100%;
   max-width: 580px;
@@ -1088,6 +1276,12 @@ textarea.form-control {
   flex-direction: column;
   align-items: center;
   gap: 4px;
+}
+
+.review-rate-btn > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .review-rate-btn span.key-tip {
@@ -1206,6 +1400,38 @@ textarea.form-control {
   padding: 20px;
 }
 
+.summary-art {
+  margin-bottom: 16px;
+  color: var(--primary);
+}
+
+.summary-art .icon {
+  width: 48px;
+  height: 48px;
+}
+
+.summary-icon {
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -0.2em;
+  color: var(--primary);
+}
+
+.review-choice-icon {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.review-choice-icon .icon {
+  width: 32px;
+  height: 32px;
+}
+
 .summary-score {
   font-size: 3.5rem;
   font-weight: 800;
@@ -1293,6 +1519,29 @@ textarea.form-control {
 
   .flashcard-meaning {
     font-size: 1.6rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .settings-nav {
+    padding: 12px 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .settings-content {
+    padding: 18px 16px;
+  }
+
+  .settings-option {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
   }
 }
 
