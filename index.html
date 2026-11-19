@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="64x64" href="Logo.png">
   <link rel="apple-touch-icon" href="icon 192.png">
-  <meta name="theme-color" content="#6366f1">
+  <meta name="theme-color" content="#6366f1" id="themeColorMeta">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WordPulse">
@@ -115,6 +115,9 @@
       <path d="M9.88 4.08 9.92 2.22 14.08 2.22 14.12 4.08 16.10 4.90 17.45 3.61 20.39 6.55 19.10 7.90 19.92 9.88 21.78 9.92 21.78 14.08 19.92 14.12 19.10 16.10 20.39 17.45 17.45 20.39 16.10 19.10 14.12 19.92 14.08 21.78 9.92 21.78 9.88 19.92 7.90 19.10 6.55 20.39 3.61 17.45 4.90 16.10 4.08 14.12 2.22 14.08 2.22 9.92 4.08 9.88 4.90 7.90 3.61 6.55 6.55 3.61 7.90 4.90 Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/>
       <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/>
     </symbol>
+    <symbol id="icon-moon" viewBox="0 0 24 24">
+      <path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
     <symbol id="icon-database" viewBox="0 0 24 24">
       <ellipse cx="12" cy="5" rx="8" ry="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
       <path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" fill="none" stroke="currentColor" stroke-width="1.8"/>
@@ -161,7 +164,7 @@
       <div class="stat-item">
         <div class="stat-icon mastered"><svg class="icon" aria-hidden="true"><use href="#icon-trophy"></use></svg></div>
         <div class="stat-content">
-          <div class="stat-val" id="statMastered" style="color: #15803d;">0</div>
+          <div class="stat-val stat-val-mastered" id="statMastered">0</div>
           <div class="stat-label">已熟記</div>
         </div>
       </div>
@@ -169,7 +172,7 @@
       <div class="stat-item">
         <div class="stat-icon learning"><svg class="icon" aria-hidden="true"><use href="#icon-book-open"></use></svg></div>
         <div class="stat-content">
-          <div class="stat-val" id="statLearning" style="color: #b45309;">0</div>
+          <div class="stat-val stat-val-learning" id="statLearning">0</div>
           <div class="stat-label">學習中</div>
         </div>
       </div>
@@ -177,7 +180,7 @@
       <div class="stat-item">
         <div class="stat-icon new"><svg class="icon" aria-hidden="true"><use href="#icon-sprout"></use></svg></div>
         <div class="stat-content">
-          <div class="stat-val" id="statNew" style="color: #b91c1c;">0</div>
+          <div class="stat-val stat-val-new" id="statNew">0</div>
           <div class="stat-label">需加強 (陌生)</div>
         </div>
       </div>
@@ -301,8 +304,7 @@
             style="border: 2px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px; cursor: pointer; transition: all var(--transition-fast); display: flex; align-items: center; gap: 16px; background: var(--bg-card);"
             onmouseover="this.style.borderColor='var(--primary)'"
             onmouseout="this.style.borderColor='var(--border-color)'">
-            <div class="review-choice-icon"
-              style="background: #e0e7ff; color: #4f46e5;">
+            <div class="review-choice-icon review-choice-flashcard">
               <svg class="icon" aria-hidden="true"><use href="#icon-cards"></use></svg>
             </div>
             <div>
@@ -316,8 +318,7 @@
           <div onclick="startReview('拼字')"
             style="border: 2px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px; cursor: pointer; transition: all var(--transition-fast); display: flex; align-items: center; gap: 16px; background: var(--bg-card);"
             onmouseover="this.style.borderColor='#0ea5e9'" onmouseout="this.style.borderColor='var(--border-color)'">
-            <div class="review-choice-icon"
-              style="background: #e0f2fe; color: #0284c7;">
+            <div class="review-choice-icon review-choice-spelling">
               <svg class="icon" aria-hidden="true"><use href="#icon-keyboard"></use></svg>
             </div>
             <div>
@@ -416,8 +417,7 @@
       <div class="spelling-sub">請輸入對應的英文單字拼寫 (按 Enter 送出)</div>
 
       <!-- 華碩輸入法提示標籤 -->
-      <div
-        style="margin: 0 auto 16px; max-width: 460px; font-size: 0.82rem; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 7px 14px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: var(--shadow-sm);">
+      <div class="spelling-warning">
         <span><svg class="icon" aria-hidden="true"><use href="#icon-alert"></use></svg> 提醒：請勿使用「華碩智慧輸入法」進行測驗，避免自動帶出文字</span>
       </div>
 
@@ -484,13 +484,37 @@
       <div class="modal-body settings-body">
         <div class="settings-layout">
           <nav class="settings-nav" aria-label="設定分類">
-            <div class="settings-nav-item active" aria-current="page">
+            <button type="button" class="settings-nav-item" data-settings-target="appearanceSettings"
+              onclick="showSettingsSection('appearanceSettings')">
+              <svg class="icon" aria-hidden="true"><use href="#icon-moon"></use></svg>
+              外觀
+            </button>
+            <button type="button" class="settings-nav-item active" data-settings-target="dataManagementSettings"
+              aria-current="page" onclick="showSettingsSection('dataManagementSettings')">
               <svg class="icon" aria-hidden="true"><use href="#icon-database"></use></svg>
               資料管理
-            </div>
+            </button>
           </nav>
 
-          <section class="settings-content" aria-labelledby="dataManagementTitle">
+          <section class="settings-content" id="appearanceSettings" aria-labelledby="appearanceTitle" hidden>
+            <div class="settings-page-heading">
+              <h4 id="appearanceTitle">外觀</h4>
+              <p>選擇適合目前環境的顯示配色。</p>
+            </div>
+
+            <div class="settings-option">
+              <div class="settings-option-copy">
+                <h5><svg class="icon" aria-hidden="true"><use href="#icon-moon"></use></svg> 深色模式</h5>
+                <p>使用深色背景與配色，設定會保存在此裝置。</p>
+              </div>
+              <label class="theme-switch">
+                <input type="checkbox" id="darkModeToggle" aria-label="啟用深色模式" onchange="toggleDarkMode()">
+                <span class="theme-switch-track" aria-hidden="true"></span>
+              </label>
+            </div>
+          </section>
+
+          <section class="settings-content" id="dataManagementSettings" aria-labelledby="dataManagementTitle">
             <div class="settings-page-heading">
               <h4 id="dataManagementTitle">資料管理</h4>
               <p>備份、還原或清除您的單字與學習進度。</p>
@@ -571,6 +595,7 @@
        1. State Management & LocalStorage (No Default Mock Data)
        -------------------------------------------------------------------------- */
     const STORAGE_KEY = "wordpulse_user_words_v1";
+    const THEME_STORAGE_KEY = "wordpulse_theme_v1";
     let words = [];
     let currentFilter = "全部";
     let searchQuery = "";
@@ -812,9 +837,9 @@
 
           <div class="card-footer">
             <div class="card-status-actions">
-              <button class="status-quick-btn" onclick="setWordStatus('${item.id}', '陌生')" style="color: #dc2626;">陌生</button>
-              <button class="status-quick-btn" onclick="setWordStatus('${item.id}', '學習中')" style="color: #d97706;">學習中</button>
-              <button class="status-quick-btn" onclick="setWordStatus('${item.id}', '熟記')" style="color: #16a34a;">熟記</button>
+              <button class="status-quick-btn is-new" onclick="setWordStatus('${item.id}', '陌生')">陌生</button>
+              <button class="status-quick-btn is-learning" onclick="setWordStatus('${item.id}', '學習中')">學習中</button>
+              <button class="status-quick-btn is-mastered" onclick="setWordStatus('${item.id}', '熟記')">熟記</button>
             </div>
 
             <div class="card-ops">
@@ -1263,6 +1288,32 @@
       document.getElementById("settingsModal").classList.remove("show");
     }
 
+    function showSettingsSection(sectionId) {
+      document.querySelectorAll(".settings-content").forEach(section => {
+        section.hidden = section.id !== sectionId;
+      });
+      document.querySelectorAll(".settings-nav-item").forEach(button => {
+        const isActive = button.dataset.settingsTarget === sectionId;
+        button.classList.toggle("active", isActive);
+        if (isActive) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+      });
+    }
+
+    function loadAppearance() {
+      const isDark = localStorage.getItem(THEME_STORAGE_KEY) === "dark";
+      document.documentElement.dataset.theme = isDark ? "dark" : "light";
+      document.getElementById("darkModeToggle").checked = isDark;
+      document.getElementById("themeColorMeta").content = isDark ? "#0b1120" : "#6366f1";
+    }
+
+    function toggleDarkMode() {
+      const isDark = document.getElementById("darkModeToggle").checked;
+      document.documentElement.dataset.theme = isDark ? "dark" : "light";
+      document.getElementById("themeColorMeta").content = isDark ? "#0b1120" : "#6366f1";
+      localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light");
+    }
+
     function exportData() {
       if (words.length === 0) {
         showAppDialog("目前詞庫尚無單字可供匯出。");
@@ -1363,6 +1414,7 @@
        Initialization
        -------------------------------------------------------------------------- */
     loadWords();
+    loadAppearance();
     renderWordList();
   </script>
 </body>
