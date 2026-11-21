@@ -2,15 +2,13 @@
    WordPulse Service Worker - Offline Cache & PWA Support
    ========================================================================== */
 
-const CACHE_NAME = 'wordpulse-cache-v5';
+const CACHE_NAME = 'wordpulse-cache-v6';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './style.css?v=5',
-  './manifest.json',
-  './Logo.png',
-  './icon 192.png',
-  './icon 512.png'
+  './style.css?v=6',
+  './manifest.json?v=6',
+  './Logo.png?v=6'
 ];
 
 // Install Event: Pre-cache core shell
