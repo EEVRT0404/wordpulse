@@ -147,14 +147,14 @@ body {
   width: 52px;
   height: 52px;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 26px;
   box-shadow: 0 8px 16px var(--primary-glow);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .brand-logo img {
