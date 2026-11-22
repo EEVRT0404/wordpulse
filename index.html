@@ -155,6 +155,35 @@
         <button class="btn btn-success" onclick="openReviewChoiceModal()">
           開始複習
         </button>
+        <button class="btn btn-secondary header-sign-in" id="headerSignInButton" onclick="signInWithGoogle()" hidden>
+          <svg class="icon" aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          登入
+        </button>
+        <div class="account-menu" id="accountMenu" hidden>
+          <button class="account-trigger" id="accountMenuTrigger" type="button" aria-haspopup="menu"
+            aria-expanded="false" aria-controls="accountMenuPanel" onclick="toggleAccountMenu()">
+            <span class="account-avatar">
+              <img id="accountAvatarImage" alt="" hidden>
+              <svg class="icon account-avatar-fallback" id="accountAvatarFallback" aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <span class="account-name" id="accountDisplayName"></span>
+            <svg class="icon account-chevron" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="account-menu-panel" id="accountMenuPanel" role="menu" aria-labelledby="accountMenuTrigger" hidden>
+            <div class="account-menu-identity">
+              <strong id="accountMenuName"></strong>
+              <span id="accountMenuEmail"></span>
+            </div>
+            <button type="button" role="menuitem" onclick="openCloudSettingsFromMenu()">雲端詞庫管理</button>
+            <button type="button" role="menuitem" class="account-menu-sign-out" onclick="signOutFromGoogle()">登出</button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -558,17 +587,6 @@
 
             <div class="settings-option">
               <div class="settings-option-copy">
-                <h5>Google 雲端帳戶</h5>
-                <p id="cloudAccountStatus">尚未登入。登入後可自動同步詞庫到雲端。</p>
-              </div>
-              <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <button class="btn btn-primary btn-sm" id="googleSignInButton" onclick="signInWithGoogle()">Google 登入</button>
-                <button class="btn btn-secondary btn-sm" id="googleSignOutButton" onclick="signOutFromGoogle()" hidden>登出</button>
-              </div>
-            </div>
-
-            <div class="settings-option">
-              <div class="settings-option-copy">
                 <h5>雲端詞庫同步</h5>
                 <p id="cloudSyncStatus">登入 Google 帳戶後即可使用雲端同步。</p>
               </div>
@@ -682,13 +700,23 @@
     let uploadTimer = null;
 
     function setCloudUi(user) {
-      document.getElementById("googleSignInButton").hidden = Boolean(user);
-      document.getElementById("googleSignOutButton").hidden = !user;
+      document.getElementById("headerSignInButton").hidden = Boolean(user);
+      document.getElementById("accountMenu").hidden = !user;
       document.getElementById("cloudUploadButton").disabled = !user;
       document.getElementById("cloudDownloadButton").disabled = !user;
-      document.getElementById("cloudAccountStatus").textContent = user
-        ? `已登入：${user.displayName || user.email || "Google 帳戶"}`
-        : "尚未登入。登入後可自動同步詞庫到雲端。";
+      if (!user) {
+        closeAccountMenu();
+        return;
+      }
+
+      const displayName = user.displayName || user.email || "Google 帳戶";
+      const avatarImage = document.getElementById("accountAvatarImage");
+      document.getElementById("accountDisplayName").textContent = displayName;
+      document.getElementById("accountMenuName").textContent = displayName;
+      document.getElementById("accountMenuEmail").textContent = user.email || "";
+      avatarImage.hidden = !user.photoURL;
+      avatarImage.src = user.photoURL || "";
+      document.getElementById("accountAvatarFallback").hidden = Boolean(user.photoURL);
     }
 
     function setCloudStatus(message) {
@@ -761,6 +789,37 @@
         setCloudStatus("登出失敗，請稍後再試。");
       }
     };
+
+    function closeAccountMenu() {
+      const menu = document.getElementById("accountMenuPanel");
+      const trigger = document.getElementById("accountMenuTrigger");
+      menu.hidden = true;
+      trigger.setAttribute("aria-expanded", "false");
+    }
+
+    window.toggleAccountMenu = function () {
+      const menu = document.getElementById("accountMenuPanel");
+      const trigger = document.getElementById("accountMenuTrigger");
+      const isOpening = menu.hidden;
+      menu.hidden = !isOpening;
+      trigger.setAttribute("aria-expanded", String(isOpening));
+    };
+
+    window.openCloudSettingsFromMenu = function () {
+      closeAccountMenu();
+      window.openSettings();
+      window.showSettingsSection("dataManagementSettings");
+    };
+
+    document.addEventListener("click", (event) => {
+      if (!document.getElementById("accountMenu").contains(event.target)) {
+        closeAccountMenu();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeAccountMenu();
+    });
 
     window.uploadWordsToCloud = async function () {
       if (!currentUser) return;
