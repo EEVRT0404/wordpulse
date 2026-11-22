@@ -200,28 +200,31 @@ body {
 
 .account-menu {
   position: relative;
+  min-width: 0;
+  max-width: 160px;
 }
 
 .account-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  min-height: 44px;
-  max-width: 240px;
-  padding: 5px 10px 5px 6px;
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
-  background: var(--bg-card);
-  color: var(--text-primary);
+  gap: 8px;
+  min-width: 0;
+  max-width: 160px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
   font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
+  transition: background var(--transition-fast);
 }
 
 .account-trigger:hover,
 .account-trigger[aria-expanded="true"] {
   background: var(--bg-subtle);
-  border-color: var(--border-focus);
 }
 
 .account-trigger:focus-visible,
@@ -232,9 +235,9 @@ body {
 
 .account-avatar {
   display: grid;
-  flex: 0 0 32px;
-  width: 32px;
-  height: 32px;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
   place-items: center;
   overflow: hidden;
   border-radius: 50%;
@@ -257,9 +260,9 @@ body {
 }
 
 .account-name {
+  max-width: 96px;
   overflow: hidden;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: inherit;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -277,49 +280,29 @@ body {
 
 .account-menu-panel {
   position: absolute;
-  z-index: 20;
-  top: calc(100% + 10px);
+  z-index: 50;
+  top: calc(100% + 8px);
   right: 0;
-  width: min(280px, calc(100vw - 32px));
-  padding: 8px;
+  width: min(176px, calc(100vw - 32px));
+  padding: 6px;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  border-radius: 12px;
   background: var(--bg-card);
   box-shadow: var(--shadow-lg);
 }
 
-.account-menu-identity {
-  display: grid;
-  gap: 3px;
-  padding: 10px 12px 12px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.account-menu-identity strong,
-.account-menu-identity span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.account-menu-identity strong {
-  font-size: 0.9rem;
-}
-
-.account-menu-identity span {
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-}
-
 .account-menu-panel button {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   font: inherit;
+  font-size: 0.875rem;
   text-align: left;
   cursor: pointer;
 }
@@ -328,12 +311,26 @@ body {
   background: var(--bg-subtle);
 }
 
+.account-menu-panel button .icon {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+}
+
 .account-menu-panel .account-menu-sign-out {
-  margin-top: 4px;
-  border-top: 1px solid var(--border-color);
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-  color: #dc2626;
+  color: #e11d48;
+}
+
+:root[data-theme="dark"] .account-menu-panel .account-menu-sign-out {
+  color: #fb7185;
+}
+
+.account-menu-panel .account-menu-sign-out:hover {
+  background: #fff1f2;
+}
+
+:root[data-theme="dark"] .account-menu-panel .account-menu-sign-out:hover {
+  background: rgba(76, 5, 25, 0.4);
 }
 
 /* ==========================================================================
@@ -1902,6 +1899,10 @@ textarea.form-control {
   .header-actions .account-trigger {
     width: 100%;
     max-width: none;
+  }
+
+  .account-name {
+    max-width: 72px;
   }
 
   .toolbar {

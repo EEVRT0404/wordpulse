@@ -163,7 +163,8 @@
         </button>
         <div class="account-menu" id="accountMenu" hidden>
           <button class="account-trigger" id="accountMenuTrigger" type="button" aria-haspopup="menu"
-            aria-expanded="false" aria-controls="accountMenuPanel" onclick="toggleAccountMenu()">
+            aria-expanded="false" aria-controls="accountMenuPanel" aria-label="開啟帳號選單"
+            onclick="toggleAccountMenu()">
             <span class="account-avatar">
               <img id="accountAvatarImage" alt="" hidden>
               <svg class="icon account-avatar-fallback" id="accountAvatarFallback" aria-hidden="true" viewBox="0 0 24 24">
@@ -176,12 +177,19 @@
             </svg>
           </button>
           <div class="account-menu-panel" id="accountMenuPanel" role="menu" aria-labelledby="accountMenuTrigger" hidden>
-            <div class="account-menu-identity">
-              <strong id="accountMenuName"></strong>
-              <span id="accountMenuEmail"></span>
-            </div>
-            <button type="button" role="menuitem" onclick="openCloudSettingsFromMenu()">雲端詞庫管理</button>
-            <button type="button" role="menuitem" class="account-menu-sign-out" onclick="signOutFromGoogle()">登出</button>
+            <button type="button" role="menuitem" onclick="openCloudSettingsFromMenu()">
+              <svg class="icon" aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M20 16.2A4.5 4.5 0 0 0 18 7.7a6 6 0 0 0-11.6 1.8A3.5 3.5 0 0 0 7 16.5h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 12v9m-3-3 3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>設定雲端</span>
+            </button>
+            <button type="button" role="menuitem" class="account-menu-sign-out" onclick="signOutFromGoogle()">
+              <svg class="icon" aria-hidden="true" viewBox="0 0 24 24">
+                <path d="m10 17 5-5-5-5M15 12H3m9-9h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>登出</span>
+            </button>
           </div>
         </div>
       </div>
@@ -712,8 +720,6 @@
       const displayName = user.displayName || user.email || "Google 帳戶";
       const avatarImage = document.getElementById("accountAvatarImage");
       document.getElementById("accountDisplayName").textContent = displayName;
-      document.getElementById("accountMenuName").textContent = displayName;
-      document.getElementById("accountMenuEmail").textContent = user.email || "";
       avatarImage.hidden = !user.photoURL;
       avatarImage.src = user.photoURL || "";
       document.getElementById("accountAvatarFallback").hidden = Boolean(user.photoURL);
