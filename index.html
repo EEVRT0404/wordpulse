@@ -558,6 +558,28 @@
 
             <div class="settings-option">
               <div class="settings-option-copy">
+                <h5>Google 雲端帳戶</h5>
+                <p id="cloudAccountStatus">尚未登入。登入後可自動同步詞庫到雲端。</p>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-primary btn-sm" id="googleSignInButton" onclick="signInWithGoogle()">Google 登入</button>
+                <button class="btn btn-secondary btn-sm" id="googleSignOutButton" onclick="signOutFromGoogle()" hidden>登出</button>
+              </div>
+            </div>
+
+            <div class="settings-option">
+              <div class="settings-option-copy">
+                <h5>雲端詞庫同步</h5>
+                <p id="cloudSyncStatus">登入 Google 帳戶後即可使用雲端同步。</p>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-secondary btn-sm" id="cloudUploadButton" onclick="uploadWordsToCloud()" disabled>上傳到雲端</button>
+                <button class="btn btn-secondary btn-sm" id="cloudDownloadButton" onclick="downloadWordsFromCloud()" disabled>從雲端下載</button>
+              </div>
+            </div>
+
+            <div class="settings-option">
+              <div class="settings-option-copy">
                 <h5><svg class="icon" aria-hidden="true"><use href="#icon-download"></use></svg> 匯出詞庫</h5>
                 <p>將所有單字與學習進度匯出成 JSON 檔案，方便備份或換裝置使用。</p>
               </div>
@@ -626,6 +648,169 @@
   <!-- ========================================================================
        APPLICATION LOGIC SCRIPT
        ======================================================================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      onAuthStateChanged,
+      signInWithPopup,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDNzxThYXxThSYXxECuwvPxJCtdrziru1LSu5E",
+      authDomain: "wordpulse-app.firebaseapp.com",
+      projectId: "wordpulse-app",
+      storageBucket: "wordpulse-app.firebasestorage.app",
+      messagingSenderId: "946378413332",
+      appId: "1:946378413332:web:2133021b9fe0f795498881"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const firestore = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+    let currentUser = null;
+    let uploadTimer = null;
+
+    function setCloudUi(user) {
+      document.getElementById("googleSignInButton").hidden = Boolean(user);
+      document.getElementById("googleSignOutButton").hidden = !user;
+      document.getElementById("cloudUploadButton").disabled = !user;
+      document.getElementById("cloudDownloadButton").disabled = !user;
+      document.getElementById("cloudAccountStatus").textContent = user
+        ? `已登入：${user.displayName || user.email || "Google 帳戶"}`
+        : "尚未登入。登入後可自動同步詞庫到雲端。";
+    }
+
+    function setCloudStatus(message) {
+      document.getElementById("cloudSyncStatus").textContent = message;
+    }
+
+    function getWordsDocument(user) {
+      return doc(firestore, "users", user.uid, "wordpulse", "vocabulary");
+    }
+
+    async function uploadWords(wordsToUpload) {
+      if (!currentUser) return false;
+      try {
+        await setDoc(getWordsDocument(currentUser), {
+          words: wordsToUpload,
+          updatedAt: serverTimestamp()
+        });
+        setCloudStatus("雲端詞庫已上傳至最新版本。");
+        return true;
+      } catch (error) {
+        console.error("雲端上傳失敗", error);
+        setCloudStatus("雲端上傳失敗，請稍後再試。");
+        return false;
+      }
+    }
+
+    async function downloadWords() {
+      if (!currentUser) return false;
+      try {
+        const snapshot = await getDoc(getWordsDocument(currentUser));
+        if (!snapshot.exists()) {
+          setCloudStatus("雲端目前沒有詞庫資料。");
+          return false;
+        }
+        const downloadedWords = snapshot.data().words;
+        if (!Array.isArray(downloadedWords)) {
+          setCloudStatus("雲端詞庫格式不正確。");
+          return false;
+        }
+        if (typeof window.setWordPulseWords === "function") {
+          window.setWordPulseWords(downloadedWords);
+        }
+        setCloudStatus("已載入雲端詞庫。");
+        return true;
+      } catch (error) {
+        console.error("雲端下載失敗", error);
+        setCloudStatus("雲端下載失敗，請稍後再試。");
+        return false;
+      }
+    }
+
+    window.signInWithGoogle = async function () {
+      try {
+        setCloudStatus("正在開啟 Google 登入...");
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        console.error("Google 登入失敗", error);
+        setCloudStatus(error.code === "auth/popup-blocked"
+          ? "瀏覽器封鎖了登入視窗，請允許彈出視窗後再試。"
+          : "Google 登入失敗，請稍後再試。");
+      }
+    };
+
+    window.signOutFromGoogle = async function () {
+      try {
+        await signOut(auth);
+        setCloudStatus("已登出，雲端同步已停止。");
+      } catch (error) {
+        console.error("登出失敗", error);
+        setCloudStatus("登出失敗，請稍後再試。");
+      }
+    };
+
+    window.uploadWordsToCloud = async function () {
+      if (!currentUser) return;
+      setCloudStatus("正在上傳詞庫...");
+      await uploadWords(typeof window.getWordPulseWords === "function"
+        ? window.getWordPulseWords()
+        : []);
+    };
+
+    window.downloadWordsFromCloud = async function () {
+      if (!currentUser) return;
+      setCloudStatus("正在下載雲端詞庫...");
+      await downloadWords();
+    };
+
+    window.syncWordsToCloud = function (wordsToUpload) {
+      if (!currentUser) return;
+      clearTimeout(uploadTimer);
+      uploadTimer = setTimeout(() => uploadWords(wordsToUpload), 700);
+    };
+
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      setCloudUi(user);
+      if (!user) return;
+
+      setCloudStatus("正在讀取雲端詞庫...");
+      const snapshot = await getDoc(getWordsDocument(user)).catch((error) => {
+        console.error("讀取雲端詞庫失敗", error);
+        setCloudStatus("雲端同步暫時無法使用。");
+        return null;
+      });
+      if (!snapshot) return;
+
+      if (snapshot.exists()) {
+        const cloudWords = snapshot.data().words;
+        if (Array.isArray(cloudWords)) {
+          if (typeof window.setWordPulseWords === "function") {
+            window.setWordPulseWords(cloudWords);
+          }
+          setCloudStatus("雲端詞庫已載入並與此裝置同步。");
+          return;
+        }
+      }
+
+      await uploadWords(typeof window.getWordPulseWords === "function"
+        ? window.getWordPulseWords()
+        : []);
+    });
+  </script>
   <script>
     /* --------------------------------------------------------------------------
        1. State Management & LocalStorage (No Default Mock Data)
@@ -722,7 +907,22 @@
     function saveWordsToStorage() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
       updateStats();
+      if (typeof window.syncWordsToCloud === "function") {
+        window.syncWordsToCloud(words);
+      }
     }
+
+    window.getWordPulseWords = function () {
+      return [...words];
+    };
+
+    window.setWordPulseWords = function (newWords) {
+      if (!Array.isArray(newWords)) return false;
+      words = newWords;
+      saveWordsToStorage();
+      renderWordList();
+      return true;
+    };
 
     /* --------------------------------------------------------------------------
        2. PWA Service Worker Registration
