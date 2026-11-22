@@ -528,17 +528,64 @@
       <div class="modal-body settings-body">
         <div class="settings-layout">
           <nav class="settings-nav" aria-label="設定分類">
+            <button type="button" class="settings-nav-item active" data-settings-target="generalSettings"
+              aria-current="page" onclick="showSettingsSection('generalSettings')">
+              <svg class="icon" aria-hidden="true"><use href="#icon-settings"></use></svg>
+              一般
+            </button>
             <button type="button" class="settings-nav-item" data-settings-target="appearanceSettings"
               onclick="showSettingsSection('appearanceSettings')">
               <svg class="icon" aria-hidden="true"><use href="#icon-moon"></use></svg>
               外觀
             </button>
-            <button type="button" class="settings-nav-item active" data-settings-target="dataManagementSettings"
-              aria-current="page" onclick="showSettingsSection('dataManagementSettings')">
+            <button type="button" class="settings-nav-item" data-settings-target="dataManagementSettings"
+              onclick="showSettingsSection('dataManagementSettings')">
               <svg class="icon" aria-hidden="true"><use href="#icon-database"></use></svg>
               資料管理
             </button>
           </nav>
+
+          <section class="settings-content" id="generalSettings" aria-labelledby="generalTitle">
+            <div class="settings-page-heading">
+              <h4 id="generalTitle">一般</h4>
+              <p>管理複習方式、朗讀與其他常用偏好。</p>
+            </div>
+
+            <div class="settings-option">
+              <div class="settings-option-copy">
+                <h5>卡片顯示時自動朗讀</h5>
+                <p>切換卡片時播放英文單字發音。</p>
+              </div>
+              <label class="settings-switch">
+                <input type="checkbox" id="autoPronounceToggle"
+                  onchange="setGeneralPreference('autoPronounce', this.checked)">
+                <span aria-hidden="true"></span>
+                <span class="visually-hidden">卡片顯示時自動朗讀</span>
+              </label>
+            </div>
+
+            <div class="settings-option settings-range-option">
+              <div class="settings-option-copy">
+                <h5>朗讀速度</h5>
+                <p>調整瀏覽器內建語音的朗讀速度。</p>
+              </div>
+              <div class="settings-range-control">
+                <input type="range" id="pronunciationRate" min="0.5" max="1.5" step="0.1" value="1"
+                  aria-label="朗讀速度"
+                  oninput="updatePronunciationRateLabel(this.value)"
+                  onchange="setGeneralPreference('pronunciationRate', this.value)">
+                <output id="pronunciationRateLabel" for="pronunciationRate">一般（1.0x）</output>
+              </div>
+            </div>
+
+            <div class="settings-option">
+              <div class="settings-option-copy">
+                <h5>重置一般設定</h5>
+                <p>恢復朗讀與介面偏好的預設值。</p>
+              </div>
+              <button class="btn btn-outline-danger btn-sm" onclick="resetGeneralPreferences()">重置一般設定</button>
+            </div>
+          </section>
 
           <section class="settings-content" id="appearanceSettings" aria-labelledby="appearanceTitle" hidden>
             <div class="settings-page-heading">
@@ -882,6 +929,12 @@
        -------------------------------------------------------------------------- */
     const STORAGE_KEY = "wordpulse_user_words_v1";
     const THEME_STORAGE_KEY = "wordpulse_theme_v1";
+    const GENERAL_SETTINGS_STORAGE_KEY = "wordpulse_general_settings_v1";
+    const defaultGeneralSettings = {
+      autoPronounce: false,
+      pronunciationRate: 1
+    };
+    let generalSettings = { ...defaultGeneralSettings };
     const systemThemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
     let words = [];
     let currentFilter = "全部";
@@ -1028,6 +1081,7 @@
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "en-US";
+      utterance.rate = generalSettings.pronunciationRate;
       utterance.onerror = () => {
         if (requestId !== activePronunciationRequestId) return;
         reportPronunciationError("線上與瀏覽器內建語音皆無法播放，請確認裝置音量或英文語音設定。");
@@ -1412,6 +1466,10 @@
       } else {
         exEl.style.display = "none";
       }
+
+      if (generalSettings.autoPronounce) {
+        speakText(currentReviewWord.word);
+      }
     }
 
     function flipCurrentCard() {
@@ -1584,6 +1642,7 @@
        -------------------------------------------------------------------------- */
     function openSettings() {
       document.getElementById("settingsModal").classList.add("show");
+      showSettingsSection("generalSettings");
     }
 
     function closeSettings() {
@@ -1631,6 +1690,57 @@
       }
       localStorage.setItem(THEME_STORAGE_KEY, mode);
       applyThemeMode(mode);
+    }
+
+    function loadGeneralSettings() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(GENERAL_SETTINGS_STORAGE_KEY) || "{}");
+        generalSettings = {
+          autoPronounce: typeof saved.autoPronounce === "boolean"
+            ? saved.autoPronounce : defaultGeneralSettings.autoPronounce,
+          pronunciationRate: Number.isFinite(Number(saved.pronunciationRate))
+            ? Math.min(1.5, Math.max(0.5, Number(saved.pronunciationRate)))
+            : defaultGeneralSettings.pronunciationRate
+        };
+      } catch {
+        generalSettings = { ...defaultGeneralSettings };
+      }
+
+      document.getElementById("autoPronounceToggle").checked = generalSettings.autoPronounce;
+      document.getElementById("pronunciationRate").value = String(generalSettings.pronunciationRate);
+      updatePronunciationRateLabel(generalSettings.pronunciationRate);
+    }
+
+    function setGeneralPreference(key, value) {
+      if (key === "pronunciationRate") value = Math.min(1.5, Math.max(0.5, Number(value)));
+      if (key === "autoPronounce") value = Boolean(value);
+      generalSettings[key] = value;
+      localStorage.setItem(GENERAL_SETTINGS_STORAGE_KEY, JSON.stringify(generalSettings));
+    }
+
+    function updatePronunciationRateLabel(value) {
+      const rate = Number(value);
+      const label = rate < 0.8 ? "較慢" : rate > 1.2 ? "較快" : "一般";
+      document.getElementById("pronunciationRateLabel").textContent = `${label}（${rate.toFixed(1)}x）`;
+    }
+
+    async function resetGeneralPreferences() {
+      if (!await showAppDialog("確定要重置一般設定嗎？", {
+        variant: "warning",
+        title: "重置一般設定",
+        confirmText: "重置",
+        cancelText: "取消"
+      })) return;
+
+      generalSettings = { ...defaultGeneralSettings };
+      localStorage.setItem(GENERAL_SETTINGS_STORAGE_KEY, JSON.stringify(generalSettings));
+      document.getElementById("autoPronounceToggle").checked = generalSettings.autoPronounce;
+      document.getElementById("pronunciationRate").value = String(generalSettings.pronunciationRate);
+      updatePronunciationRateLabel(generalSettings.pronunciationRate);
+      await showAppDialog("一般設定已恢復預設值。", {
+        variant: "success",
+        title: "重置完成"
+      });
     }
 
     function exportData() {
@@ -1734,6 +1844,7 @@
        -------------------------------------------------------------------------- */
     loadWords();
     loadAppearance();
+    loadGeneralSettings();
     renderWordList();
   </script>
 </body>
