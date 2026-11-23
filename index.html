@@ -1059,6 +1059,7 @@
     const pronunciationAudio = new Audio();
     let pronunciationErrorShown = false;
     let activePronunciationRequestId = 0;
+    let activeGooglePronunciationEndpointIndex = -1;
     let pronunciationAudioErrorHandler = null;
 
     function reportPronunciationError(message) {
@@ -1067,29 +1068,56 @@
       showAppDialog(message, { variant: "error", title: "語音播放失敗" });
     }
 
+    function playGooglePronunciationEndpoint(urls, endpointIndex, requestId) {
+      if (requestId !== activePronunciationRequestId ||
+          endpointIndex <= activeGooglePronunciationEndpointIndex) return;
+
+      activeGooglePronunciationEndpointIndex = endpointIndex;
+      pronunciationAudio.src = urls[endpointIndex];
+      pronunciationAudio.play().catch(() => {
+        if (requestId !== activePronunciationRequestId ||
+            endpointIndex !== activeGooglePronunciationEndpointIndex) return;
+
+        if (endpointIndex + 1 < urls.length) {
+          playGooglePronunciationEndpoint(urls, endpointIndex + 1, requestId);
+          return;
+        }
+        reportPronunciationError("Google 語音無法播放，請確認網路連線、裝置音量及瀏覽器播放權限。");
+      });
+    }
+
     function speakText(text) {
       if (!text) {
         return;
       }
       pronunciationErrorShown = false;
       const requestId = ++activePronunciationRequestId;
+      activeGooglePronunciationEndpointIndex = -1;
       if (pronunciationAudioErrorHandler) {
         pronunciationAudio.removeEventListener("error", pronunciationAudioErrorHandler);
       }
       pronunciationAudioErrorHandler = () => {
         if (requestId !== activePronunciationRequestId) return;
-        reportPronunciationError("Google 語音播放失敗，請確認網路連線、裝置音量及瀏覽器是否允許播放語音。");
+        if (activeGooglePronunciationEndpointIndex + 1 < googlePronunciationUrls.length) {
+          playGooglePronunciationEndpoint(
+            googlePronunciationUrls,
+            activeGooglePronunciationEndpointIndex + 1,
+            requestId
+          );
+          return;
+        }
+        reportPronunciationError("Google 語音服務目前無法提供這個發音，請確認網路連線後再試。");
       };
-      pronunciationAudio.addEventListener("error", pronunciationAudioErrorHandler, { once: true });
+      pronunciationAudio.addEventListener("error", pronunciationAudioErrorHandler);
       pronunciationAudio.pause();
       pronunciationAudio.currentTime = 0;
       const googleSpeed = Math.min(1.5, Math.max(0.5, generalSettings.pronunciationRate));
-      pronunciationAudio.src = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&ttsspeed=${encodeURIComponent(googleSpeed)}&q=${encodeURIComponent(text)}`;
-      pronunciationAudio.play().catch(() => {
-        if (requestId === activePronunciationRequestId) {
-          reportPronunciationError("Google 語音無法播放，請點擊畫面後再試一次，並確認裝置音量。");
-        }
-      });
+      const query = `ie=UTF-8&tl=en&ttsspeed=${encodeURIComponent(googleSpeed)}&q=${encodeURIComponent(text)}`;
+      const googlePronunciationUrls = [
+        `https://translate.googleapis.com/translate_tts?client=gtx&${query}`,
+        `https://translate.google.com/translate_tts?client=tw-ob&${query}`
+      ];
+      playGooglePronunciationEndpoint(googlePronunciationUrls, 0, requestId);
     }
 
     /* --------------------------------------------------------------------------
