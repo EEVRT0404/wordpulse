@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/png" href="Logo.png?v=6">
+  <link rel="icon" type="image/png" href="Logo.png?v=7">
   <title>WordPulse 智慧英文寶庫</title>
-  <meta name="description" content="高效率現代化英文背單字系統，支援 3D 卡牌翻轉記憶、語音真人朗讀、拼字挑戰測驗與學習進度追蹤。">
+  <meta name="description" content="高效率現代化英文背單字系統，支援 3D 卡牌翻轉記憶、Google 語音朗讀、拼字挑戰測驗與學習進度追蹤。">
 
   <!-- PWA Manifest & App Icons -->
-  <link rel="manifest" href="manifest.json?v=6">
-  <link rel="apple-touch-icon" href="Logo.png?v=6">
+  <link rel="manifest" href="manifest.json?v=7">
+  <link rel="apple-touch-icon" href="Logo.png?v=7">
   <meta name="theme-color" content="#6366f1" id="themeColorMeta">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -23,7 +23,7 @@
     rel="stylesheet">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 
 <body>
@@ -136,7 +136,7 @@
     <header class="app-header">
       <div class="brand-section">
         <div class="brand-logo" title="WordPulse 應用程式圖標">
-          <img src="Logo.png?v=6" alt="WordPulse Logo" width="48" height="48">
+          <img src="Logo.png?v=7" alt="WordPulse Logo" width="48" height="48">
         </div>
         <div class="brand-info">
           <h1>WordPulse 單字脈動</h1>
@@ -567,7 +567,7 @@
             <div class="settings-option settings-range-option">
               <div class="settings-option-copy">
                 <h5>朗讀速度</h5>
-                <p>調整瀏覽器內建語音的朗讀速度。</p>
+                <p>調整 Google 語音系統的朗讀速度。</p>
               </div>
               <div class="settings-range-control">
                 <input type="range" id="pronunciationRate" min="0.5" max="1.5" step="0.1" value="1"
@@ -1054,39 +1054,17 @@
     }
 
     /* --------------------------------------------------------------------------
-       3. Pronunciation Audio & Browser Fallback
+       3. Google Pronunciation Audio
        -------------------------------------------------------------------------- */
     const pronunciationAudio = new Audio();
     let pronunciationErrorShown = false;
     let activePronunciationRequestId = 0;
-    let pronunciationFallbackRequestId = -1;
     let pronunciationAudioErrorHandler = null;
 
     function reportPronunciationError(message) {
       if (pronunciationErrorShown) return;
       pronunciationErrorShown = true;
       showAppDialog(message, { variant: "error", title: "語音播放失敗" });
-    }
-
-    function playBrowserPronunciation(text, requestId) {
-      if (requestId !== activePronunciationRequestId || pronunciationFallbackRequestId === requestId) return;
-      pronunciationFallbackRequestId = requestId;
-      pronunciationAudio.pause();
-
-      if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
-        reportPronunciationError("線上語音播放失敗，且此瀏覽器不支援內建語音朗讀。");
-        return;
-      }
-
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "en-US";
-      utterance.rate = generalSettings.pronunciationRate;
-      utterance.onerror = () => {
-        if (requestId !== activePronunciationRequestId) return;
-        reportPronunciationError("線上與瀏覽器內建語音皆無法播放，請確認裝置音量或英文語音設定。");
-      };
-      window.speechSynthesis.speak(utterance);
     }
 
     function speakText(text) {
@@ -1098,15 +1076,20 @@
       if (pronunciationAudioErrorHandler) {
         pronunciationAudio.removeEventListener("error", pronunciationAudioErrorHandler);
       }
-      pronunciationAudioErrorHandler = () => playBrowserPronunciation(text, requestId);
+      pronunciationAudioErrorHandler = () => {
+        if (requestId !== activePronunciationRequestId) return;
+        reportPronunciationError("Google 語音播放失敗，請確認網路連線、裝置音量及瀏覽器是否允許播放語音。");
+      };
       pronunciationAudio.addEventListener("error", pronunciationAudioErrorHandler, { once: true });
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
       pronunciationAudio.pause();
       pronunciationAudio.currentTime = 0;
-      pronunciationAudio.src = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(text)}`;
-      pronunciationAudio.play().catch(() => playBrowserPronunciation(text, requestId));
+      const googleSpeed = Math.min(1.5, Math.max(0.5, generalSettings.pronunciationRate));
+      pronunciationAudio.src = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&ttsspeed=${encodeURIComponent(googleSpeed)}&q=${encodeURIComponent(text)}`;
+      pronunciationAudio.play().catch(() => {
+        if (requestId === activePronunciationRequestId) {
+          reportPronunciationError("Google 語音無法播放，請點擊畫面後再試一次，並確認裝置音量。");
+        }
+      });
     }
 
     /* --------------------------------------------------------------------------

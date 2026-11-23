@@ -1,7 +1,7 @@
 {
   "name": "WordPulse 智慧英文寶庫",
   "short_name": "WordPulse",
-  "description": "高效率現代化英文背單字系統，支援 3D 卡牌翻轉記憶、語音真人朗讀與拼字挑戰測驗。",
+  "description": "高效率現代化英文背單字系統，支援 3D 卡牌翻轉記憶、Google 語音朗讀與拼字挑戰測驗。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -11,7 +11,7 @@
   "lang": "zh-TW",
   "icons": [
     {
-      "src": "Logo.png?v=6",
+      "src": "Logo.png?v=7",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
