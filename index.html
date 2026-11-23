@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
   <link rel="icon" type="image/png" href="Logo.png?v=7">
   <title>WordPulse 智慧英文寶庫</title>
   <meta name="description" content="高效率現代化英文背單字系統，支援 3D 卡牌翻轉記憶、Google 語音朗讀、拼字挑戰測驗與學習進度追蹤。">
@@ -1057,7 +1058,6 @@
        3. Google Pronunciation Audio
        -------------------------------------------------------------------------- */
     const pronunciationAudio = new Audio();
-    pronunciationAudio.referrerPolicy = "no-referrer";
     let pronunciationErrorShown = false;
     let activePronunciationRequestId = 0;
     let activeGooglePronunciationEndpointIndex = -1;

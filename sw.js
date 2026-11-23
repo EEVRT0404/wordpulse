@@ -2,7 +2,7 @@
    WordPulse Service Worker - Offline Cache & PWA Support
    ========================================================================== */
 
-const CACHE_NAME = 'wordpulse-cache-v9';
+const CACHE_NAME = 'wordpulse-cache-v10';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
